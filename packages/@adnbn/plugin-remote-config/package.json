@@ -1,0 +1,32 @@
+{
+  "name": "@addonbone/remote-config-plugin",
+  "version": "0.0.1",
+  "description": "Remote config plugin for Addon Bone",
+  "keywords": [
+    "adnbn",
+    "browser",
+    "chrome",
+    "opera",
+    "firefox",
+    "safari",
+    "edge",
+    "extension",
+    "config",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:addonbone/remote-config-plugin.git"
+  },
+  "license": "MIT",
+  "author": "Addon Bone",
+  "files": [
+    "plugin"
+  ],
+  "exports": {
+    ".": "./plugin/index.ts"
+  },
+  "dependencies": {
+    "adnbn": "^0.0.51"
+  }
+}
