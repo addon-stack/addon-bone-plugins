@@ -8,7 +8,7 @@ import addMinutes from "date-fns/addMinutes";
 
 import {awaiter, getConfigOptions} from "./utils";
 
-import {RemoteConfigContract} from "./types";
+import {RemoteConfig} from "./types";
 
 type StorageContract = {
     updatedAt: string;
@@ -16,7 +16,7 @@ type StorageContract = {
 }
 
 type SecureStorageContract = {
-    config: RemoteConfigContract;
+    config: RemoteConfig;
 }
 
 export default defineService({
@@ -24,24 +24,24 @@ export default defineService({
     init: () => {
         const {config, ttl, url} = getConfigOptions();
 
-        return new RemoteConfig(config, ttl, url);
+        return new RemoteConfigService(config, ttl, url);
     },
 });
 
-class RemoteConfig {
+class RemoteConfigService {
     private storage = new Storage<StorageContract>({area: 'sync', namespace: 'remoteConfig'});
     private secureStorage = new SecureStorage<SecureStorageContract>({area: 'local', namespace: 'remoteConfig'});
     private processing: boolean = false;
 
     constructor(
-        private defaultConfig: RemoteConfigContract,
+        private defaultConfig: RemoteConfig,
         private ttl: number,
         private url?: string,
     ) {
     }
 
 
-    public async get(): Promise<RemoteConfigContract> {
+    public async get(): Promise<RemoteConfig> {
         try {
             await awaiter((() => this.processing));
         } catch (err) {
@@ -64,7 +64,7 @@ class RemoteConfig {
         }
     }
 
-    private async load(): Promise<RemoteConfigContract> {
+    private async load(): Promise<RemoteConfig> {
         const storageConfig = await this.secureStorage.get('config');
         const updatedAt = await this.storage.get('updatedAt');
         const isOrigin = await this.storage.get('isOrigin');
@@ -89,7 +89,7 @@ class RemoteConfig {
         throw new Error("No available config from storage or api");
     }
 
-    private async fetch(): Promise<RemoteConfigContract> {
+    private async fetch(): Promise<RemoteConfig> {
         if (!this.url) {
             throw new Error("No url provided for remote config");
         }
@@ -102,7 +102,7 @@ class RemoteConfig {
             throw new Error(`Response error status: ${status} - ${statusText}`);
         }
 
-        const config: RemoteConfigContract | undefined = await response.json();
+        const config: RemoteConfig | undefined = await response.json();
 
         if (!config) {
             throw new Error('Config not found');

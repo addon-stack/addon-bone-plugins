@@ -5,20 +5,20 @@ import {RemoteConfigContext} from './context';
 import {getConfigOptions} from "../utils";
 import {getRemoteConfig} from "../api";
 
-import {RemoteConfigContract} from '../types';
+import {RemoteConfig} from '../types';
 
 export interface RemoteConfigProviderProps {
-    config?: RemoteConfigContract;
+    config?: Partial<RemoteConfig>;
 }
 
 const RemoteConfigProvider = ({children, config: propConfig}: PropsWithChildren<RemoteConfigProviderProps>) => {
-    const [config, setConfig] = useState<RemoteConfigContract>(getConfigOptions().config);
+    const [config, setConfig] = useState<RemoteConfig>(getConfigOptions().config);
 
     useEffect(() => {
         getRemoteConfig().then((result) => setConfig(result));
     }, []);
 
-    const finalConfig: RemoteConfigContract = useMemo(() => ({...config, ...propConfig}), [propConfig, config]);
+    const finalConfig: RemoteConfig = useMemo(() => ({...config, ...propConfig}), [propConfig, config]);
 
     return (
         <RemoteConfigContext.Provider value={{config: finalConfig}}>

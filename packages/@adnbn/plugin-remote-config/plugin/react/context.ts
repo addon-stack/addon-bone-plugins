@@ -1,17 +1,23 @@
 import {createContext, useContext} from "react";
 
-import {RemoteConfigContract} from "../types";
+import {RemoteConfig} from "../types";
 
-export interface RemoteConfigContextContract {
-    config: RemoteConfigContract;
+export interface RemoteConfigContract {
+    config: RemoteConfig;
 }
 
-export const DefaultRemoteConfig: RemoteConfigContextContract = {
-    config: {}
+export const DefaultRemoteConfig: RemoteConfigContract = {
+    config: {} as RemoteConfig
 };
 
-export const RemoteConfigContext = createContext<RemoteConfigContextContract>(DefaultRemoteConfig);
+export const RemoteConfigContext = createContext<RemoteConfigContract>(DefaultRemoteConfig);
 
 RemoteConfigContext.displayName = "RemoteConfigContext";
 
-export const useRemoteConfig = <T extends RemoteConfigContract = RemoteConfigContract>() => useContext(RemoteConfigContext).config as T;
+export function useRemoteConfig<T = RemoteConfig>(): T;
+export function useRemoteConfig<T = RemoteConfig, S = any>(selector: (config: T) => S): S;
+export function useRemoteConfig<T = RemoteConfig, S = any>(selector?: (config: T) => S): T | S {
+    const config = useContext(RemoteConfigContext).config as T;
+
+    return selector ? selector(config) : config;
+}

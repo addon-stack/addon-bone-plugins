@@ -1,17 +1,17 @@
 import {DefinePlugin} from '@rspack/core';
 import {definePlugin} from 'adnbn';
 
-import {RemoteConfigContract} from './types';
+import {RemoteConfig} from './types';
 
-export {RemoteConfigContract};
+export {RemoteConfig};
 
 export type RemoteConfigOptions = {
     url?: string | (() => string)
     ttl?: number | (() => number)
-    config?: RemoteConfigContract | (() => RemoteConfigContract)
+    config?: RemoteConfig | (() => RemoteConfig)
 }
 
-export default definePlugin(({url = 'REMOTE_CONFIG_URL', config = {}, ttl = 60}: RemoteConfigOptions) => ({
+export default definePlugin(({url = 'REMOTE_CONFIG_URL', config, ttl}: RemoteConfigOptions) => ({
     name: '@adnbn/remote-config-plugin',
     service: true,
     bundler: () => {
