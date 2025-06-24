@@ -1,0 +1,121 @@
+import {defineService} from "adnbn";
+import {SecureStorage, Storage} from "adnbn/storage";
+
+import formatISO from "date-fns/formatISO";
+import isFuture from "date-fns/isFuture";
+import parseISO from "date-fns/parseISO";
+import addMinutes from "date-fns/addMinutes";
+
+import {awaiter, getConfigOptions} from "./utils";
+
+import {RemoteConfigContract} from "./types";
+
+type StorageContract = {
+    updatedAt: string;
+    isOrigin: boolean
+}
+
+type SecureStorageContract = {
+    config: RemoteConfigContract;
+}
+
+export default defineService({
+    permissions: ['storage'],
+    init: () => {
+        const {config, ttl, url} = getConfigOptions();
+
+        return new RemoteConfig(config, ttl, url);
+    },
+});
+
+class RemoteConfig {
+    private storage = new Storage<StorageContract>({area: 'sync', namespace: 'remoteConfig'});
+    private secureStorage = new SecureStorage<SecureStorageContract>({area: 'local', namespace: 'remoteConfig'});
+    private processing: boolean = false;
+
+    constructor(
+        private defaultConfig: RemoteConfigContract,
+        private ttl: number,
+        private url?: string,
+    ) {
+    }
+
+
+    public async get(): Promise<RemoteConfigContract> {
+        try {
+            await awaiter((() => this.processing));
+        } catch (err) {
+            console.error(err);
+        }
+
+        this.processing = true;
+
+        try {
+            return await this.load();
+
+        } catch (err) {
+            console.error(err);
+
+            await this.setIsOrigin(false);
+
+            return this.defaultConfig;
+        } finally {
+            this.processing = false;
+        }
+    }
+
+    private async load(): Promise<RemoteConfigContract> {
+        const storageConfig = await this.secureStorage.get('config');
+        const updatedAt = await this.storage.get('updatedAt');
+        const isOrigin = await this.storage.get('isOrigin');
+
+        if (storageConfig
+            && isOrigin
+            && updatedAt
+            && isFuture(addMinutes(parseISO(updatedAt), this.ttl))
+        ) {
+            return storageConfig;
+        }
+
+        const apiConfig = await this.fetch();
+
+        if (apiConfig) {
+            await this.setIsOrigin(true);
+            await this.setUpdatedAt(formatISO(new Date()));
+            await this.secureStorage.set('config', apiConfig);
+            return apiConfig;
+        }
+
+        throw new Error("No available config from storage or api");
+    }
+
+    private async fetch(): Promise<RemoteConfigContract> {
+        if (!this.url) {
+            throw new Error("No url provided for remote config");
+        }
+
+        const response = await fetch(this.url, {credentials: "include"});
+
+        const {ok, status, statusText} = response;
+
+        if (!ok) {
+            throw new Error(`Response error status: ${status} - ${statusText}`);
+        }
+
+        const config: RemoteConfigContract | undefined = await response.json();
+
+        if (!config) {
+            throw new Error('Config not found');
+        }
+
+        return config;
+    }
+
+    private async setIsOrigin(value: boolean): Promise<void> {
+        await this.storage.set('isOrigin', value);
+    }
+
+    private async setUpdatedAt(value: string): Promise<void> {
+        await this.storage.set('updatedAt', value);
+    }
+}
