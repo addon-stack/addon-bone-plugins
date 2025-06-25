@@ -22,8 +22,8 @@ type SecureStorageContract = {
 };
 
 class RemoteConfigService {
-    private storage = new Storage<StorageContract>({area: "sync", namespace: "remoteConfig"});
-    private secureStorage = new SecureStorage<SecureStorageContract>({area: "local", namespace: "remoteConfig"});
+    private readonly storage = new Storage<StorageContract>({area: "sync", namespace: "remoteConfig"});
+    private readonly secureStorage = new SecureStorage<SecureStorageContract>({area: "local", namespace: "remoteConfig"});
     private processing: boolean = false;
 
     constructor(
