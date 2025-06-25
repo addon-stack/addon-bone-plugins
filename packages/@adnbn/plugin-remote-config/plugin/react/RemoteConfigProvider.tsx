@@ -1,27 +1,28 @@
-import React, {PropsWithChildren, useEffect, useMemo, useState} from 'react';
+import React, {PropsWithChildren, useEffect, useState} from "react";
 
-import {RemoteConfigContext} from './context';
+import getOptions from "../options";
 
-import {getConfigOptions} from "../utils";
+import {RemoteConfigContext} from "./context";
+
 import {getRemoteConfig} from "../api";
 
-import {RemoteConfig} from '../types';
+import {RemoteConfig} from "../types";
 
 export interface RemoteConfigProviderProps {
     config?: Partial<RemoteConfig>;
 }
 
 const RemoteConfigProvider = ({children, config: propConfig}: PropsWithChildren<RemoteConfigProviderProps>) => {
-    const [config, setConfig] = useState<RemoteConfig>(getConfigOptions().config);
+    const [config, setConfig] = useState<RemoteConfig>(getOptions().config);
 
     useEffect(() => {
-        getRemoteConfig().then((result) => setConfig(result));
+        getRemoteConfig()
+            .then(result => setConfig(result))
+            .catch(err => console.error(err));
     }, []);
 
-    const finalConfig: RemoteConfig = useMemo(() => ({...config, ...propConfig}), [propConfig, config]);
-
     return (
-        <RemoteConfigContext.Provider value={{config: finalConfig}}>
+        <RemoteConfigContext.Provider value={{config: {...config, ...propConfig}}}>
             {children}
         </RemoteConfigContext.Provider>
     );

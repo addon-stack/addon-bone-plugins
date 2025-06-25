@@ -10,10 +10,6 @@
     "skipLibCheck": true,
     "jsx": "react-jsx"
   },
-  "include": [
-    "**/*"
-  ],
-  "exclude": [
-    "**/*.test.ts"
-  ]
+  "include": ["**/*"],
+  "exclude": ["**/*.test.ts"]
 }

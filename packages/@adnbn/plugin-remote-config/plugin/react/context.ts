@@ -7,7 +7,7 @@ export interface RemoteConfigContract {
 }
 
 export const DefaultRemoteConfig: RemoteConfigContract = {
-    config: {} as RemoteConfig
+    config: {} as RemoteConfig,
 };
 
 export const RemoteConfigContext = createContext<RemoteConfigContract>(DefaultRemoteConfig);
