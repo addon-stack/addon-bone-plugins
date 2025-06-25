@@ -22,29 +22,38 @@ type SecureStorageContract = {
 };
 
 class RemoteConfigService {
-    private readonly storage = new Storage<StorageContract>({area: "sync", namespace: "remoteConfig"});
-    private readonly secureStorage = new SecureStorage<SecureStorageContract>({area: "local", namespace: "remoteConfig"});
+    private readonly settingsStorage = new Storage<StorageContract>({
+        area: "sync",
+        namespace: "remote-config"
+    });
+
+    private readonly configStorage = new SecureStorage<SecureStorageContract>({
+        area: "local",
+        namespace: "remote-config",
+    });
+
     private processing: boolean = false;
 
     constructor(
         private defaultConfig: RemoteConfig,
         private ttl: number,
         private url?: string
-    ) {}
+    ) {
+    }
 
     public async get(): Promise<RemoteConfig> {
         try {
             await awaiter(() => this.processing);
         } catch (e) {
-            console.error("Remote Config Service: ", e);
+            console.error("Remote Config Service - await error:", e);
         }
 
         this.processing = true;
 
         try {
             return await this.load();
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
+            console.error("Remote Config Storage - load error:", e);
 
             await this.setIsOrigin(false);
 
@@ -55,9 +64,10 @@ class RemoteConfigService {
     }
 
     private async load(): Promise<RemoteConfig> {
-        const storageConfig = await this.secureStorage.get("config");
-        const updatedAt = await this.storage.get("updatedAt");
-        const isOrigin = await this.storage.get("isOrigin");
+        const storageConfig = await this.configStorage.get("config");
+
+        const updatedAt = await this.settingsStorage.get("updatedAt");
+        const isOrigin = await this.settingsStorage.get("isOrigin");
 
         if (storageConfig && isOrigin && updatedAt && isFuture(addMinutes(parseISO(updatedAt), this.ttl))) {
             return storageConfig;
@@ -69,7 +79,7 @@ class RemoteConfigService {
             await this.setIsOrigin(true);
             await this.setUpdatedAt();
 
-            await this.secureStorage.set("config", apiConfig);
+            await this.configStorage.set("config", apiConfig);
 
             return apiConfig;
         }
@@ -100,7 +110,7 @@ class RemoteConfigService {
     }
 
     private async setIsOrigin(value: boolean): Promise<void> {
-        await this.storage.set("isOrigin", value);
+        await this.settingsStorage.set("isOrigin", value);
     }
 
     private async setUpdatedAt(date?: Date): Promise<void> {
@@ -108,7 +118,7 @@ class RemoteConfigService {
             date = new Date();
         }
 
-        await this.storage.set("updatedAt", formatISO(date));
+        await this.settingsStorage.set("updatedAt", formatISO(date));
     }
 }
 
