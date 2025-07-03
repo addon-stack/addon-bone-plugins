@@ -24,7 +24,7 @@ type SecureStorageContract = {
 class RemoteConfigService {
     private readonly settingsStorage = new Storage<StorageContract>({
         area: "sync",
-        namespace: "remote-config"
+        namespace: "remote-config",
     });
 
     private readonly configStorage = new SecureStorage<SecureStorageContract>({
@@ -38,8 +38,7 @@ class RemoteConfigService {
         private defaultConfig: RemoteConfig,
         private ttl: number,
         private url?: string
-    ) {
-    }
+    ) {}
 
     public async get(): Promise<RemoteConfig> {
         try {
