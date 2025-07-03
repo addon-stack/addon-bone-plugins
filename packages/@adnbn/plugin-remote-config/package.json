@@ -1,6 +1,6 @@
 {
   "name": "@adnbn/remote-config-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Remote config plugin for Addon Bone",
   "keywords": [
     "adnbn",
@@ -33,8 +33,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@adnbn/browser": "^0.1.5",
-    "adnbn": "^0.0.53",
+    "adnbn": "^0.1.0",
     "date-fns": "^2.25.0",
     "validator": "^13.15.15"
   },
