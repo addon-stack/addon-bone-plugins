@@ -40,6 +40,9 @@ class RemoteConfigService {
         private url?: string
     ) {}
 
+    /**
+     * @returns {Promise<import('@adnbn/remote-config-plugin').RemoteConfig>}
+     */
     public async get(): Promise<RemoteConfig> {
         try {
             await awaiter(() => this.processing);
