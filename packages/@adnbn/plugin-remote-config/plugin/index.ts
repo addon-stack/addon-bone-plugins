@@ -13,7 +13,7 @@ export interface RemoteConfigOptions {
 
 export default definePlugin((options: RemoteConfigOptions = {}) => {
     return {
-        name: "@adnbn/remote-config-plugin",
+        name: "@adnbn/plugin-remote-config",
         service: true,
         bundler: () => {
             const {url = "REMOTE_CONFIG_URL", config, ttl} = options;
