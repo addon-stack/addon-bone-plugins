@@ -17,7 +17,7 @@ export default (): Options => {
         options = __REMOTE_CONFIG_OPTIONS__;
     } catch (e) {
         console.error(
-            "Failed to load @adnbn/remote-config-plugin parameters. Make sure the plugin is properly configured in the adnbn configuration file."
+            "Failed to load @adnbn/plugin-remote-config parameters. Make sure the plugin is properly configured in the adnbn configuration file."
         );
     }
 

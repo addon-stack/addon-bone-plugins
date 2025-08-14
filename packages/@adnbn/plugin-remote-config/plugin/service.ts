@@ -19,11 +19,12 @@ type StorageContract = {
 
 type SecureStorageContract = {
     config: RemoteConfig;
+    url?: string;
 };
 
 class RemoteConfigService {
     private readonly settingsStorage = new Storage<StorageContract>({
-        area: "sync",
+        area: "local",
         namespace: "remote-config",
     });
 
@@ -41,7 +42,7 @@ class RemoteConfigService {
     ) {}
 
     /**
-     * @returns {Promise<import('@adnbn/remote-config-plugin').RemoteConfig>}
+     * @returns {Promise<import('@adnbn/plugin-remote-config').RemoteConfig>}
      */
     public async get(): Promise<RemoteConfig> {
         try {
@@ -67,11 +68,20 @@ class RemoteConfigService {
 
     private async load(): Promise<RemoteConfig> {
         const storageConfig = await this.configStorage.get("config");
+        const storedUrl = await this.configStorage.get("url");
 
         const updatedAt = await this.settingsStorage.get("updatedAt");
         const isOrigin = await this.settingsStorage.get("isOrigin");
 
-        if (storageConfig && isOrigin && updatedAt && isFuture(addMinutes(parseISO(updatedAt), this.ttl))) {
+        const isUrlSame = !this.url || storedUrl === this.url;
+
+        if (
+            storageConfig &&
+            isOrigin &&
+            updatedAt &&
+            isUrlSame &&
+            isFuture(addMinutes(parseISO(updatedAt), this.ttl))
+        ) {
             return storageConfig;
         }
 
@@ -82,6 +92,10 @@ class RemoteConfigService {
             await this.setUpdatedAt();
 
             await this.configStorage.set("config", apiConfig);
+
+            if (this.url) {
+                await this.configStorage.set("url", this.url);
+            }
 
             return apiConfig;
         }

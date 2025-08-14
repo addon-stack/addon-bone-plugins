@@ -1,7 +1,7 @@
-# @adnbn/remote-config-plugin
+# @adnbn/plugin-remote-config
 
-[![npm version](https://img.shields.io/npm/v/@adnbn/remote-config-plugin.svg)](https://www.npmjs.com/package/@adnbn/remote-config-plugin)
-[![npm downloads](https://img.shields.io/npm/dm/@adnbn/remote-config-plugin.svg)](https://www.npmjs.com/package/@adnbn/remote-config-plugin)
+[![npm version](https://img.shields.io/npm/v/@adnbn/plugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![npm downloads](https://img.shields.io/npm/dm/@adnbn/plugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
 
 Remote configuration plugin for [Addon Bone](https://github.com/addonbone).
 
@@ -18,13 +18,13 @@ Remote configuration plugin for [Addon Bone](https://github.com/addonbone).
 Using npm:
 
 ```bash
- npm install @adnbn/remote-config-plugin
+ npm install @adnbn/plugin-remote-config
 ```
 
 Using Yarn:
 
 ```bash
- yarn add @adnbn/remote-config-plugin
+ yarn add @adnbn/plugin-remote-config
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ In your Addon Bone config (e.g., `adnbn.config.ts`), register the plugin:
 
 ```ts
 import {defineConfig} from "adnbn";
-import remoteConfig from "@adnbn/remote-config-plugin";
+import remoteConfig from "@adnbn/plugin-remote-config";
 
 export default defineConfig({
     plugins: [
@@ -57,7 +57,7 @@ export default defineConfig({
 #### In a content script, background, or any other extension layer
 
 ```ts
-import {getRemoteConfig} from "@adnbn/remote-config-plugin/api";
+import {getRemoteConfig} from "@adnbn/plugin-remote-config/api";
 
 async function initialize() {
     try {
@@ -76,7 +76,7 @@ Wrap your application with the `RemoteConfigProvider`, then use the `useRemoteCo
 ```tsx
 import React, {FC} from "react";
 import ReactDOM from "react-dom";
-import {RemoteConfigProvider} from "@adnbn/remote-config-plugin/react";
+import {RemoteConfigProvider} from "@adnbn/plugin-remote-config/react";
 import App from "./App";
 
 const Popup: FC = () => {
@@ -91,7 +91,7 @@ export default Popup;
 ```
 
 ```tsx
-import {useRemoteConfig} from "@adnbn/remote-config-plugin/react";
+import {useRemoteConfig} from "@adnbn/plugin-remote-config/react";
 
 function FeatureComponent() {
     const {featureFlag, apiEndpoint} = useRemoteConfig();
@@ -122,9 +122,9 @@ To enable proper TypeScript support and type safety for your configuration, you 
 Create a declaration file in your project (e.g., `types/config.d.ts` or `config.d.ts`) and extend the `RemoteConfig` interface:
 
 ```typescript
-import "@adnbn/remote-config-plugin";
+import "@adnbn/plugin-remote-config";
 
-declare module "@adnbn/remote-config-plugin" {
+declare module "@adnbn/plugin-remote-config" {
     interface RemoteConfig {
         featureFlag: boolean;
         apiEndpoint: string;

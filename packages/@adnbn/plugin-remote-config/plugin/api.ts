@@ -6,9 +6,7 @@ import {isBackground} from "@adnbn/browser";
 import {RemoteConfig} from "./types";
 
 export const getRemoteConfig = async <T extends RemoteConfig = RemoteConfig>(): Promise<T> => {
-    if (isBackground()) {
-        return await getServiceOrigin("@adnbn/remote-config-plugin/service").get();
-    }
+    const service = isBackground() ? getServiceOrigin : getServiceProxy;
 
-    return await getServiceProxy("@adnbn/remote-config-plugin/service").get();
+    return await service("@adnbn/plugin-remote-config/service").get();
 };

@@ -1,5 +1,5 @@
 {
-  "name": "@adnbn/remote-config-plugin",
+  "name": "@adnbn/plugin-remote-config",
   "version": "0.1.2",
   "description": "Remote config plugin for Addon Bone",
   "keywords": [
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:addonbone/remote-config-plugin.git"
+    "url": "git@github.com:addonbone/plugin-remote-config.git"
   },
   "license": "MIT",
   "author": "Addon Bone",
@@ -33,7 +33,6 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "adnbn": "^0.2.0",
     "date-fns": "^2.25.0",
     "validator": "^13.15.15"
   },
@@ -41,10 +40,12 @@
     "@types/react": "^19.0",
     "@types/react-dom": "^19.0",
     "@types/validator": "^13.15.2",
+    "adnbn": "^0.2.7",
     "prettier": "^3.5.3"
   },
   "peerDependencies": {
     "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
-    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "adnbn": ">=0.2.3"
   }
 }
