@@ -3,7 +3,7 @@ import {definePlugin, getEnv} from "adnbn";
 import isURL from "is-url";
 import {RemoteConfig, type RemoteConfigOptions, type ValueOrGetter} from "./types";
 
-export {RemoteConfig};
+export type {RemoteConfig, RemoteConfigOptions};
 
 export default definePlugin((options: Partial<ValueOrGetter<RemoteConfigOptions>> = {}) => {
     const {url = "REMOTE_CONFIG_URL", config, ttl} = options;

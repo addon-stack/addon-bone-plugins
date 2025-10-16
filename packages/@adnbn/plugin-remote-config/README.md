@@ -1,9 +1,11 @@
 # @adnbn/plugin-remote-config
 
-[![npm version](https://img.shields.io/npm/v/@adnbn/plugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
-[![npm downloads](https://img.shields.io/npm/dm/@adnbn/plugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![npm version](https://img.shields.io/npm/v/%40adnbn%2Fplugin-remote-config.svg?logo=npm)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![npm downloads](https://img.shields.io/npm/dm/%40adnbn%2Fplugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
+[![CI](https://github.com/addon-stack/plugin-remote-config/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/plugin-remote-config/actions/workflows/ci.yml)
 
-Remote configuration plugin for [Addon Bone](https://github.com/addonbone).
+Remote configuration plugin for [Addon Bone](https://addonbone.com).
 
 ## Features
 
@@ -11,20 +13,26 @@ Remote configuration plugin for [Addon Bone](https://github.com/addonbone).
 - Configurable cache time-to-live (TTL) in minutes.
 - Fallback to default configuration on failure.
 - Access configuration in background scripts, content scripts, or service workers.
-- React context provider and hook for easy consumption in React apps.
+- React hook for easy consumption in React apps.
 
 ## Installation
 
-Using npm:
+### npm:
 
 ```bash
- npm install @adnbn/plugin-remote-config
+npm install @adnbn/plugin-remote-config
 ```
 
-Using Yarn:
+### pnpm:
 
 ```bash
- yarn add @adnbn/plugin-remote-config
+pnpm add @adnbn/plugin-remote-config
+```
+
+### yarn:
+
+```bash
+yarn add @adnbn/plugin-remote-config
 ```
 
 ## Usage
@@ -71,27 +79,10 @@ async function initialize() {
 
 #### In React
 
-Wrap your application with the `RemoteConfigProvider`, then use the `useRemoteConfig` hook:
+Use the useRemoteConfig hook directly inside your components:
 
 ```tsx
-import React, {FC} from "react";
-import ReactDOM from "react-dom";
-import {RemoteConfigProvider} from "@adnbn/plugin-remote-config/react";
-import App from "./App";
-
-const Popup: FC = () => {
-    return (
-        <RemoteConfigProvider>
-            <App />
-        </RemoteConfigProvider>
-    );
-};
-
-export default Popup;
-```
-
-```tsx
-import {useRemoteConfig} from "@adnbn/plugin-remote-config/react";
+import {useRemoteConfig} from "@adnbn/plugin-remote-config/hooks";
 
 function FeatureComponent() {
     const {featureFlag, apiEndpoint} = useRemoteConfig();
@@ -195,7 +186,3 @@ export default defineConfig({
     ],
 });
 ```
-
-## License
-
-MIT © Addon Bone
