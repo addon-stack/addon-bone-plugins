@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noEmptyInterface: Keep this empty to allow declaration merging in consumer projects
 export interface RemoteConfig {}
 
 export interface RemoteConfigOptions {

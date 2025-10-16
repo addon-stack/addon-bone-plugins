@@ -1,16 +1,12 @@
-import {defineService} from "adnbn";
 import {SecureStorage, Storage} from "@addon-core/storage";
-
+import {defineService} from "adnbn";
+import AwaitLock from "await-lock";
+import addMinutes from "date-fns/addMinutes";
 import formatISO from "date-fns/formatISO";
 import isFuture from "date-fns/isFuture";
 import parseISO from "date-fns/parseISO";
-import addMinutes from "date-fns/addMinutes";
-
-import AwaitLock from 'await-lock';
-
 import {getRemoteConfigOptions} from "./api";
-
-import {RemoteConfig} from "./types";
+import type {RemoteConfig} from "./types";
 
 type StorageContract = {
     updatedAt: string;
@@ -60,13 +56,7 @@ class RemoteConfigService {
 
         const isUrlSame = !this.url || url === this.url;
 
-        if (
-            config &&
-            isOrigin &&
-            updatedAt &&
-            isUrlSame &&
-            isFuture(addMinutes(parseISO(updatedAt), this.ttl))
-        ) {
+        if (config && isOrigin && updatedAt && isUrlSame && isFuture(addMinutes(parseISO(updatedAt), this.ttl))) {
             return config;
         }
 
@@ -119,7 +109,7 @@ class RemoteConfigService {
     }
 
     private async setUrl(url?: string): Promise<void> {
-        url && await this.configStorage.set("url", url);
+        url && (await this.configStorage.set("url", url));
     }
 }
 

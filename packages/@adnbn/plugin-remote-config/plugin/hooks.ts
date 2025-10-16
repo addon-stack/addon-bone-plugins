@@ -1,8 +1,6 @@
 import {useEffect, useState} from "react";
-
 import {getRemoteConfig, getRemoteConfigOptions} from "./api";
-
-import {RemoteConfig} from "./types";
+import type {RemoteConfig} from "./types";
 
 export function useRemoteConfig<T extends RemoteConfig = RemoteConfig>(): T;
 export function useRemoteConfig<T extends RemoteConfig = RemoteConfig, S = any>(selector: (config: T) => S): S;
