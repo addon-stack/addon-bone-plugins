@@ -1,17 +1,11 @@
 import {DefinePlugin} from "@rspack/core";
 import {definePlugin} from "adnbn";
 
-import {RemoteConfig} from "./types";
+import {RemoteConfig, RemoteConfigOptions, ValueOrGetter} from "./types";
 
 export {RemoteConfig};
 
-export interface RemoteConfigOptions {
-    url?: string | (() => string);
-    ttl?: number | (() => number);
-    config?: RemoteConfig | (() => RemoteConfig);
-}
-
-export default definePlugin((options: RemoteConfigOptions = {}) => {
+export default definePlugin((options: Partial<ValueOrGetter<RemoteConfigOptions>> = {}) => {
     return {
         name: "@adnbn/plugin-remote-config",
         service: true,
