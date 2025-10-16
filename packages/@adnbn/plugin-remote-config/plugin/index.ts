@@ -1,23 +1,17 @@
 import {DefinePlugin} from "@rspack/core";
-import {definePlugin} from "adnbn";
+import {definePlugin, getEnv} from "adnbn";
+import isURL from "is-url";
+import type {RemoteConfig, RemoteConfigOptions, ValueOrGetter} from "./types";
 
-import {RemoteConfig} from "./types";
+export type {RemoteConfig, RemoteConfigOptions};
 
-export {RemoteConfig};
+export default definePlugin((options: Partial<ValueOrGetter<RemoteConfigOptions>> = {}) => {
+    const {url = "REMOTE_CONFIG_URL", config, ttl} = options;
 
-export interface RemoteConfigOptions {
-    url?: string | (() => string);
-    ttl?: number | (() => number);
-    config?: RemoteConfig | (() => RemoteConfig);
-}
-
-export default definePlugin((options: RemoteConfigOptions = {}) => {
     return {
         name: "@adnbn/plugin-remote-config",
         service: true,
         bundler: () => {
-            const {url = "REMOTE_CONFIG_URL", config, ttl} = options;
-
             return {
                 plugins: [
                     new DefinePlugin({
@@ -29,6 +23,15 @@ export default definePlugin((options: RemoteConfigOptions = {}) => {
                     }),
                 ],
             };
+        },
+        manifest: ({manifest}) => {
+            const urlValue = (typeof url === "function" ? url() : url) || "";
+
+            const currentUrl = isURL(urlValue) ? urlValue : getEnv(urlValue);
+
+            if (currentUrl) {
+                manifest.addHostPermission(currentUrl);
+            }
         },
     };
 });

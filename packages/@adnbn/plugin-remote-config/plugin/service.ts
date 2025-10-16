@@ -1,16 +1,12 @@
+import {SecureStorage, Storage} from "@addon-core/storage";
 import {defineService} from "adnbn";
-import {SecureStorage, Storage} from "adnbn/storage";
-
+import AwaitLock from "await-lock";
+import addMinutes from "date-fns/addMinutes";
 import formatISO from "date-fns/formatISO";
 import isFuture from "date-fns/isFuture";
 import parseISO from "date-fns/parseISO";
-import addMinutes from "date-fns/addMinutes";
-
-import {awaiter} from "./utils";
-
-import getOptions from "./options";
-
-import {RemoteConfig} from "./types";
+import {getRemoteConfigOptions} from "./api";
+import type {RemoteConfig} from "./types";
 
 type StorageContract = {
     updatedAt: string;
@@ -23,17 +19,11 @@ type SecureStorageContract = {
 };
 
 class RemoteConfigService {
-    private readonly settingsStorage = new Storage<StorageContract>({
-        area: "local",
-        namespace: "remote-config",
-    });
+    private readonly settingsStorage = Storage.Local<StorageContract>({key: "remote-config"});
 
-    private readonly configStorage = new SecureStorage<SecureStorageContract>({
-        area: "local",
-        namespace: "remote-config",
-    });
+    private readonly configStorage = SecureStorage.Local<SecureStorageContract>({key: "remote-config"});
 
-    private processing: boolean = false;
+    private readonly lock = new AwaitLock();
 
     constructor(
         private defaultConfig: RemoteConfig,
@@ -45,13 +35,7 @@ class RemoteConfigService {
      * @returns {Promise<import('@adnbn/plugin-remote-config').RemoteConfig>}
      */
     public async get(): Promise<RemoteConfig> {
-        try {
-            await awaiter(() => this.processing);
-        } catch (e) {
-            console.error("Remote Config Service - await error:", e);
-        }
-
-        this.processing = true;
+        await this.lock.acquireAsync();
 
         try {
             return await this.load();
@@ -62,27 +46,18 @@ class RemoteConfigService {
 
             return this.defaultConfig;
         } finally {
-            this.processing = false;
+            this.lock.release();
         }
     }
 
     private async load(): Promise<RemoteConfig> {
-        const storageConfig = await this.configStorage.get("config");
-        const storedUrl = await this.configStorage.get("url");
+        const {config, url} = await this.configStorage.getAll();
+        const {isOrigin, updatedAt} = await this.settingsStorage.getAll();
 
-        const updatedAt = await this.settingsStorage.get("updatedAt");
-        const isOrigin = await this.settingsStorage.get("isOrigin");
+        const isUrlSame = !this.url || url === this.url;
 
-        const isUrlSame = !this.url || storedUrl === this.url;
-
-        if (
-            storageConfig &&
-            isOrigin &&
-            updatedAt &&
-            isUrlSame &&
-            isFuture(addMinutes(parseISO(updatedAt), this.ttl))
-        ) {
-            return storageConfig;
+        if (config && isOrigin && updatedAt && isUrlSame && isFuture(addMinutes(parseISO(updatedAt), this.ttl))) {
+            return config;
         }
 
         const apiConfig = await this.fetch();
@@ -90,12 +65,8 @@ class RemoteConfigService {
         if (apiConfig) {
             await this.setIsOrigin(true);
             await this.setUpdatedAt();
-
-            await this.configStorage.set("config", apiConfig);
-
-            if (this.url) {
-                await this.configStorage.set("url", this.url);
-            }
+            await this.setConfig(apiConfig);
+            await this.setUrl(this.url);
 
             return apiConfig;
         }
@@ -130,18 +101,22 @@ class RemoteConfigService {
     }
 
     private async setUpdatedAt(date?: Date): Promise<void> {
-        if (!date) {
-            date = new Date();
-        }
+        await this.settingsStorage.set("updatedAt", formatISO(date || new Date()));
+    }
 
-        await this.settingsStorage.set("updatedAt", formatISO(date));
+    private async setConfig(config: RemoteConfig): Promise<void> {
+        await this.configStorage.set("config", config);
+    }
+
+    private async setUrl(url?: string): Promise<void> {
+        url && (await this.configStorage.set("url", url));
     }
 }
 
 export default defineService({
     permissions: ["storage"],
     init: () => {
-        const {config, ttl, url} = getOptions();
+        const {config, ttl, url} = getRemoteConfigOptions();
 
         return new RemoteConfigService(config, ttl, url);
     },
