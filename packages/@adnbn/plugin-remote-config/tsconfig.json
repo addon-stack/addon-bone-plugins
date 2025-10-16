@@ -11,5 +11,5 @@
     "jsx": "react-jsx"
   },
   "include": ["**/*"],
-  "exclude": ["**/*.test.ts"]
+  "exclude": ["**/*.test.ts", "./addon/**/*.d.ts"]
 }
