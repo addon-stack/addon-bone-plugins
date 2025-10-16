@@ -73,7 +73,7 @@ jobs:
         run: npm run test:ci
 
       - name: Build
-        run: npm run build
+        run: npm run build:types
 
       - name: Upload coverage artifact
         if: always()
