@@ -73,12 +73,10 @@ class RemoteConfigService {
         const apiConfig = await this.fetch();
 
         if (apiConfig) {
-            await Promise.allSettled([
-                this.setIsOrigin(true),
-                this.setUpdatedAt(),
-                this.setConfig(apiConfig),
-                this.setUrl(this.url),
-            ]);
+            await this.setIsOrigin(true);
+            await this.setUpdatedAt();
+            await this.setConfig(apiConfig);
+            await this.setUrl(this.url);
 
             return apiConfig;
         }
