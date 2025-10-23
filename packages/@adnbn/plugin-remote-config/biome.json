@@ -27,6 +27,7 @@
       "!plugin/**/*.test.{ts,tsx,js,jsx}",
       "**/*.{json,jsonc,md,mdx,cjs,mjs}",
       "!coverage/**",
+      "!addon/**",
       "!dist/**",
       "!dist-types/**"
     ]
