@@ -60,9 +60,11 @@ class RemoteConfigService {
             return config;
         }
 
-        const apiConfig = await this.fetch();
+        let apiConfig = await this.fetch();
 
         if (apiConfig) {
+            apiConfig = {...this.defaultConfig, ...apiConfig};
+
             await this.setIsOrigin(true);
             await this.setUpdatedAt();
             await this.setConfig(apiConfig);
