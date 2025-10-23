@@ -1,5 +1,27 @@
 # Changelog
 
+## 🚀 Release `@adnbn/plugin-remote-config` v0.3.1 (2025-10-23)
+
+
+### 🐛 Bug Fixed
+
+* **service:** merge `defaultConfig` with `apiConfig` for enhanced configurability ([83e2e4b](https://github.com/addon-stack/plugin-remote-config/commit/83e2e4b4e29c06b64faa7bdf7eec78f21711070d))
+
+
+
+
+### 🧹 Chores
+
+* **dependencies:** update package-lock.json with the latest dependency versions ([c1210b1](https://github.com/addon-stack/plugin-remote-config/commit/c1210b177a977f00b7e40efd7fd268f90c9ef34d))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — 3 commits
+
 ## 🚀 Release `@adnbn/plugin-remote-config` v0.3.0 (2025-10-16)
 
 

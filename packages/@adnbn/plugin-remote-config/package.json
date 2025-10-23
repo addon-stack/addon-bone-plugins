@@ -1,6 +1,6 @@
 {
   "name": "@adnbn/plugin-remote-config",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Remote config plugin for Addon Bone",
   "keywords": [
     "adnbn",
