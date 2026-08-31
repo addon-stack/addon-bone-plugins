@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if git rev-parse --verify origin/main >/dev/null 2>&1; then
+    pnpm exec commitlint --from origin/main --to HEAD
+else
+    pnpm exec commitlint --last
+fi
+
+pnpm verify

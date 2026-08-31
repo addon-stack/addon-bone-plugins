@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  policy:
+    name: Release policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Require addon-stack main
+        shell: bash
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          test "$RELEASE_REF" = "refs/heads/main"
+          test "$RELEASE_REPOSITORY" = "addon-stack/addon-bone-plugins"
+
+  release:
+    name: Release and publish
+    needs: policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Create repository-scoped release App token
+        id: release-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.release-app-token.outputs.token }}
+          persist-credentials: true
+
+      - name: Verify current main and prepare branch
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          remote_main="$(git ls-remote --exit-code origin refs/heads/main | cut -f1)"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$remote_main" = "$RELEASE_SHA"
+          test -z "$(git status --porcelain)"
+          git switch --force-create main "$RELEASE_SHA"
+          git branch --set-upstream-to=origin/main main
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          runtime: node@24
+          cache: false
+          install: false
+
+      - name: Verify publish toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --version
+          node --version
+          npm_version="$(npm --version)"
+          echo "npm $npm_version"
+          node -e 'const [major = 0, minor = 0, patch = 0] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) process.exit(1)' "$npm_version"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          CI: "true"
+          HUSKY: "0"
+
+      - name: Verify workspace
+        run: pnpm verify
+        env:
+          CI: "true"
+
+      - name: Configure release author
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Version, changelog, tag, and push
+        run: pnpm exec nx release --skip-publish
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          HUSKY: "0"
+
+      - name: Publish current package versions with OIDC
+        run: pnpm exec nx release publish
+        env:
+          CI: "true"
+          PNPM_CONFIG_PROVENANCE: "true"
+          NPM_CONFIG_PROVENANCE: "true"

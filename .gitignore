@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.idea/
+.nx/
+.pnpm-store/
+.rstest-temp/
+.vscode/
+*.log
+*.tgz
+*.tsbuildinfo
+coverage/
+dist/
+dist-types/
+node_modules/
+package/

@@ -1,0 +1,7 @@
+{
+  "extends": "./.adnbn/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["adnbn.config.ts", "src/**/*.ts"]
+}

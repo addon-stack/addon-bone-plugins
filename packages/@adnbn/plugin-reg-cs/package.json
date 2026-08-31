@@ -16,15 +16,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/addon-stack/plugin-reg-cs.git"
+    "url": "git+https://github.com/addon-stack/addon-bone-plugins.git",
+    "directory": "packages/@adnbn/plugin-reg-cs"
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
-  "homepage": "https://github.com/addon-stack/plugin-reg-cs",
+  "homepage": "https://github.com/addon-stack/addon-bone-plugins/tree/main/packages/%40adnbn/plugin-reg-cs#readme",
   "bugs": {
-    "url": "https://github.com/addon-stack/plugin-reg-cs/issues"
+    "url": "https://github.com/addon-stack/addon-bone-plugins/issues"
   },
   "license": "MIT",
   "author": "Addon Stack <addonbonedev@gmail.com>",
@@ -48,44 +50,28 @@
     }
   },
   "scripts": {
-    "prepare": "husky",
-    "build:types": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build:types",
-    "format": "biome format --write .",
-    "format:check": "biome check --formatter-enabled=true --linter-enabled=false .",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "lint:fix:aggressive": "biome check --write --unsafe .",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "jest --bail --passWithNoTests",
-    "test:ci": "jest --ci --passWithNoTests --coverage",
-    "release": "release-it"
+    "build:types": "pnpm types",
+    "lint": "eslint . && prettier --check . --ignore-path ../../../.prettierignore",
+    "lint:fix": "eslint . --fix && prettier --write . --ignore-path ../../../.prettierignore",
+    "pack:check": "node ../../../tools/pack/verify-package.mjs .",
+    "prepack": "pnpm types",
+    "test": "rstest run --config rstest.config.ts",
+    "test:coverage": "rstest run --config rstest.config.ts --coverage",
+    "test:watch": "rstest watch --config rstest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "types": "tsc -p tsconfig.build.json",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
+    "@addon-core/browser": "^0.7.2",
     "@addon-core/inject-css": "^0.3.1",
     "@addon-core/inject-script": "^0.3.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.4",
-    "@commitlint/cli": "^20.0.0",
-    "@commitlint/config-conventional": "^20.0.0",
-    "@release-it/conventional-changelog": "^10.0.1",
-    "@types/is-url": "^1.2.32",
-    "@types/react": "^19.0",
-    "@types/react-dom": "^19.0",
-    "@types/chrome": "^0.1.12",
-    "@types/jest": "^30.0.0",
-    "adnbn": "^0.4.2",
-    "husky": "^9.1.7",
-    "jest": "^30.1.3",
-    "release-it": "^19.0.5",
-    "typescript": "^5.9.2"
+    "@types/chrome": "^0.2.2",
+    "adnbn": "^0.10.0"
   },
   "peerDependencies": {
     "adnbn": ">=0.4.0"
-  },
-  "overrides": {
-    "glob": "^9.3.5",
-    "source-map": "npm:source-map-js@^1.2.0"
   }
 }

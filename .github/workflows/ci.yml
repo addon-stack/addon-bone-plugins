@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Workflow lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install and run actionlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl --fail --show-error --silent --location \
+            --output "$archive" \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
+
+  checks:
+    name: Checks (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          runtime: node@${{ matrix.node }}
+          cache: true
+          cache-dependency-path: pnpm-lock.yaml
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          CI: "true"
+          HUSKY: "0"
+
+      - name: Check Conventional Commits
+        if: matrix.node == 22
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          MERGE_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          case "$EVENT_NAME" in
+            pull_request)
+              from="$PR_BASE_SHA"
+              to="$PR_HEAD_SHA"
+              ;;
+            merge_group)
+              from="$MERGE_BASE_SHA"
+              to="$MERGE_HEAD_SHA"
+              ;;
+            push)
+              from="$BEFORE_SHA"
+              to="$TARGET_SHA"
+              ;;
+            *)
+              echo "Unsupported event: $EVENT_NAME" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ -z "$from" || "$from" =~ ^0+$ ]] || ! git cat-file -e "$from^{commit}" 2>/dev/null; then
+            echo "No usable base commit; validating only HEAD (initial/import push)."
+            git log -1 --format=%B "$to" | pnpm exec commitlint --verbose
+          else
+            pnpm exec commitlint --from "$from" --to "$to" --verbose
+          fi
+
+      - name: Verify workspace
+        run: pnpm verify
+        env:
+          CI: "true"
+
+  verify:
+    name: verify
+    if: always()
+    needs: [actionlint, checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    env:
+      ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
+      CHECKS_RESULT: ${{ needs.checks.result }}
+    steps:
+      - name: Require every CI job to pass
+        shell: bash
+        run: |
+          test "$ACTIONLINT_RESULT" = "success"
+          test "$CHECKS_RESULT" = "success"

@@ -1,0 +1,7 @@
+packages:
+  - packages/@adnbn/*
+
+allowBuilds:
+  "@parcel/watcher": true
+  adnbn: true
+  nx: true

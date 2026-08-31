@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@adnbn/plugin-reg-cs.svg?logo=npm)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
 [![npm downloads](https://img.shields.io/npm/dm/@adnbn/plugin-reg-cs.svg)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
-[![CI](https://github.com/addon-stack/plugin-reg-cs/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/plugin-reg-cs/actions/workflows/ci.yml)
+[![CI](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml)
 
 A plugin for [Addon Bone](https://addonbone.com) that automatically registers and injects content scripts on first install, as soon as the required permissions are granted.
 
@@ -22,13 +22,13 @@ On the extension’s initial install (not on updates), the plugin:
 1. Reads your manifest’s `content_scripts` and collects URL patterns from each script’s `matches`.
 2. Treats those URL patterns as required host permissions, alongside the API permissions `tabs` and `scripting`.
 3. Checks whether these permissions are already granted:
-   - If yes, it immediately injects the specified JS and CSS files into all currently open tabs that match.
-   - If not, it subscribes to permission changes and automatically injects once the browser/user grants them (no reload required). The listener is removed after injection.
+    - If yes, it immediately injects the specified JS and CSS files into all currently open tabs that match.
+    - If not, it subscribes to permission changes and automatically injects once the browser/user grants them (no reload required). The listener is removed after injection.
 4. Injection behavior:
-   - Skips tabs that are frozen or discarded and only injects into tabs with a valid ID.
-   - JavaScript is injected with support for `run_at`, `match_about_blank`, `all_frames`, and execution `world`.
-   - CSS is injected with support for `run_at` and `match_about_blank`.
-   - Errors for individual files/tabs are logged but do not stop other injections (best‑effort via Promise.allSettled).
+    - Skips tabs that are frozen or discarded and only injects into tabs with a valid ID.
+    - JavaScript is injected with support for `run_at`, `match_about_blank`, `all_frames`, and execution `world`.
+    - CSS is injected with support for `run_at` and `match_about_blank`.
+    - Errors for individual files/tabs are logged but do not stop other injections (best‑effort via Promise.allSettled).
 
 Note: This automatic registration runs only on the first install event. It doesn’t re‑run on extension updates.
 
@@ -77,6 +77,15 @@ export default defineConfig({
     // other Addon Bone settings...
 });
 ```
+
+## Package format
+
+The runtime implementation is intentionally published as raw TypeScript. Addon Bone resolves and compiles it as part
+of the consuming extension build. The package generates TypeScript declarations only; it does not ship a JavaScript
+bundle.
+
+Development and release infrastructure lives in the
+[Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).
 
 ## Troubleshooting
 

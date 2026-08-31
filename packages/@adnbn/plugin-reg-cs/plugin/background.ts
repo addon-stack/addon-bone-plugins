@@ -1,7 +1,7 @@
+import {containsPermissions, getManifest, onInstalled, onPermissionsAdded, queryTabs} from "@addon-core/browser";
 import injectCssFactory from "@addon-core/inject-css";
 import injectScriptFactory from "@addon-core/inject-script";
 import {defineBackground} from "adnbn";
-import {containsPermissions, getManifest, onInstalled, onPermissionsAdded, queryTabs} from "adnbn/browser";
 
 type Tab = chrome.tabs.Tab;
 type Permissions = chrome.permissions.Permissions;

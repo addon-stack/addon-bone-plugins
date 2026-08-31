@@ -1,0 +1,49 @@
+{
+  "name": "addon-bone-plugins-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22.14.0",
+    "pnpm": ">=11.24.0"
+  },
+  "scripts": {
+    "audit:security": "pnpm audit --audit-level high",
+    "check": "pnpm exec nx run-many -t check",
+    "check:affected": "pnpm exec nx affected -t check",
+    "check:consumer": "node ./tools/smoke/plugin-reg-cs-consumer.mjs",
+    "format": "pnpm exec prettier --write .",
+    "format:check": "pnpm exec prettier --check .",
+    "lint": "pnpm exec eslint . && pnpm exec prettier --check .",
+    "lint:fix": "pnpm exec eslint . --fix && pnpm exec prettier --write .",
+    "pack:check": "pnpm exec nx run-many -t pack:check",
+    "prepare": "husky",
+    "release": "pnpm exec nx release",
+    "release:dry-run": "pnpm exec nx release --dry-run --skip-publish",
+    "test": "pnpm exec nx run-many -t test",
+    "test:coverage": "pnpm exec nx run-many -t test:coverage",
+    "typecheck": "pnpm exec nx run-many -t typecheck",
+    "types": "pnpm exec nx run-many -t types",
+    "verify": "pnpm lint && pnpm audit:security && pnpm check && pnpm check:consumer"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.1",
+    "@commitlint/config-conventional": "21.2.0",
+    "@eslint/js": "^10.0.1",
+    "@nx/js": "23.1.2",
+    "@rstest/core": "0.11.10",
+    "@rstest/coverage-v8": "0.11.10",
+    "@types/node": "^22.20.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "globals": "^17.7.0",
+    "husky": "9.1.7",
+    "lint-staged": "^17.1.1",
+    "nx": "23.1.2",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.65.0"
+  }
+}

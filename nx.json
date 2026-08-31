@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "main",
+  "release": {
+    "projects": ["packages/@adnbn/*"],
+    "projectsRelationship": "independent",
+    "releaseTag": {
+      "pattern": "{projectName}@{version}"
+    },
+    "conventionalCommits": {
+      "useCommitScope": true
+    },
+    "version": {
+      "conventionalCommits": true,
+      "adjustSemverBumpsForZeroMajorVersion": false,
+      "updateDependents": "always",
+      "versionActions": "./tools/release/version-actions.cjs"
+    },
+    "changelog": {
+      "projectChangelogs": {
+        "createRelease": "github"
+      }
+    },
+    "git": {
+      "commit": true,
+      "tag": true,
+      "commitMessage": "chore(release): publish {version}"
+    }
+  }
+}

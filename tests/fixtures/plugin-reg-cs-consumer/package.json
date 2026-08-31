@@ -1,0 +1,19 @@
+{
+  "name": "plugin-reg-cs-consumer-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "dependencies": {
+    "@types/chrome": "0.2.7",
+    "adnbn": "0.10.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
