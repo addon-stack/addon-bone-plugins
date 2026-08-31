@@ -43,7 +43,7 @@ const metadata = Array.isArray(packResult) ? packResult[0] : packResult;
 const files = new Set((metadata.files ?? []).map(file => file.path.replace(/^package\//, "").replace(/^\.\//, "")));
 
 const requiredFiles = [
-    "LICENSE.md",
+    "LICENSE.md.md",
     "README.md",
     "dist-types/background.d.ts",
     "dist-types/background.d.ts.map",
