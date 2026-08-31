@@ -69,8 +69,8 @@ importers:
         specifier: ^0.3.1
         version: 0.3.1(@types/chrome@0.2.7)
       '@addon-core/inject-script':
-        specifier: ^0.3.1
-        version: 0.3.1(@types/chrome@0.2.7)
+        specifier: ^0.5.0
+        version: 0.5.0
     devDependencies:
       '@types/chrome':
         specifier: ^0.2.2
@@ -96,9 +96,6 @@ packages:
 
   '@addon-core/inject-css@0.3.1':
     resolution: {integrity: sha512-Q9iIy3FAeOLaIvN2NwtQV83AIYttbvY7AfLPbHA5+UxK9XkiFQPAP6D8Bcg2SbfVKkw/DhBV1yuckamzj/GP2A==}
-
-  '@addon-core/inject-script@0.3.1':
-    resolution: {integrity: sha512-Y2XsWczY7+EKdHaZyQ2T7wRDZa5mcu/xT8XUM4tGCiCTYNxc9cOVR9x0nGzuX9CWzai4KXO4Akw8b+HEl/31Og==}
 
   '@addon-core/inject-script@0.5.0':
     resolution: {integrity: sha512-YoeMjLwZQ584jbv1rcPLgH0gchYbAXoodmSUZsX24E8MXvPNLUV4twhd6+R3WFf99wnuMafkigm0YaS35p6cNw==}
@@ -4268,13 +4265,6 @@ snapshots:
   '@addon-core/inject-css@0.3.1(@types/chrome@0.2.7)':
     dependencies:
       '@addon-core/browser': 0.2.3(@types/chrome@0.2.7)
-    transitivePeerDependencies:
-      - '@types/chrome'
-
-  '@addon-core/inject-script@0.3.1(@types/chrome@0.2.7)':
-    dependencies:
-      '@addon-core/browser': 0.2.3(@types/chrome@0.2.7)
-      nanoid: 5.1.16
     transitivePeerDependencies:
       - '@types/chrome'
 
