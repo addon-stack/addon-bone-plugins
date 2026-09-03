@@ -1,25 +1,23 @@
-import {describe, expect, it, rs} from "@rstest/core";
+jest.mock("adnbn", () => ({
+    definePlugin: (definition: unknown) => definition,
+}));
 
-type PluginMetadata = {
-    name: string;
+import registerContentScript from "../plugin/index";
+
+interface PluginDefinition {
     background: boolean;
-};
+    name: string;
+}
 
-const mocks = rs.hoisted(() => ({
-    definePlugin: rs.fn((factory: () => PluginMetadata) => factory()),
-}));
+type PluginFactory = () => PluginDefinition;
 
-rs.mock("adnbn", () => ({
-    definePlugin: mocks.definePlugin,
-}));
+describe("plugin configuration", () => {
+    it("registers the background entrypoint without build-time options", () => {
+        const plugin = (registerContentScript as unknown as PluginFactory)();
 
-import plugin from "../plugin/index";
-
-describe("plugin metadata", () => {
-    it("registers the scoped package as a background plugin", () => {
         expect(plugin).toEqual({
-            name: "@adnbn/plugin-reg-cs",
             background: true,
+            name: "@adnbn/plugin-reg-cs",
         });
     });
 });

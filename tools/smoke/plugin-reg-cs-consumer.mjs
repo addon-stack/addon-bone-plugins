@@ -20,6 +20,8 @@ const fixtureDir = path.join(repoRoot, "tests/fixtures/plugin-reg-cs-consumer");
 const temporaryRoot = mkdtempSync(path.join(tmpdir(), "plugin-reg-cs-consumer-"));
 const packDir = path.join(temporaryRoot, "pack");
 const consumerDir = path.join(temporaryRoot, "consumer");
+const storeDir = path.join(repoRoot, ".pnpm-store");
+const ignoredFixtureEntries = new Set([".adnbn", "dist", "node_modules", "pnpm-lock.yaml"]);
 
 const run = (command, args, cwd) => {
     const result = spawnSync(command, args, {
@@ -64,6 +66,12 @@ const collectFiles = directory => {
     return files;
 };
 
+const shouldCopyFixtureEntry = source => {
+    const [topLevelEntry] = path.relative(fixtureDir, source).split(path.sep);
+
+    return !ignoredFixtureEntries.has(topLevelEntry);
+};
+
 const inspectBundle = (outputDir, manifest) => {
     const backgroundFiles = [manifest.background?.service_worker, ...(manifest.background?.scripts ?? [])].filter(
         Boolean
@@ -73,9 +81,14 @@ const inspectBundle = (outputDir, manifest) => {
 
     const backgroundSource = backgroundFiles.map(file => readFileSync(path.join(outputDir, file), "utf8")).join("\n");
 
-    for (const marker of ["ExecuteScript error on tab", "InsertCSS error on tab"]) {
-        assert(backgroundSource.includes(marker), `Background bundle does not contain plugin marker: ${marker}`);
-    }
+    assert(
+        backgroundSource.includes("[@adnbn/plugin-reg-cs]"),
+        "Background bundle does not contain the structured plugin error marker"
+    );
+    assert(
+        !backgroundSource.includes("__ADNBN_PLUGIN_REG_CS_OPTIONS__"),
+        "Background bundle contains the unresolved build-time options expression"
+    );
 };
 
 const buildAndInspect = ({browser, manifestVersion}) => {
@@ -95,23 +108,27 @@ const buildAndInspect = ({browser, manifestVersion}) => {
 
     assert(manifest.manifest_version === manifestVersion, `${browser} manifest version is not ${manifestVersion}`);
     assertIncludes(manifest.permissions, "tabs", `${browser} permissions`);
+    assert(!(manifest.permissions ?? []).includes("storage"), `${browser} must not require storage`);
+    assert(!(manifest.permissions ?? []).includes("webNavigation"), `${browser} must not require webNavigation`);
 
     if (manifestVersion === 3) {
         assert(typeof manifest.background?.service_worker === "string", "Chrome MV3 must use a service worker");
         assertIncludes(manifest.permissions, "scripting", "Chrome MV3 permissions");
-        assertIncludes(manifest.host_permissions, "https://example.com/*", "Chrome MV3 host permissions");
+        assertIncludes(manifest.host_permissions, "http://127.0.0.1/*", "Chrome MV3 host permissions");
     } else {
         assert(Array.isArray(manifest.background?.scripts), "Firefox MV2 must use background scripts");
-        assertIncludes(manifest.permissions, "https://example.com/*", "Firefox MV2 permissions");
+        assertIncludes(manifest.permissions, "http://127.0.0.1/*", "Firefox MV2 permissions");
         assert(!(manifest.permissions ?? []).includes("scripting"), "Firefox MV2 must not declare scripting");
     }
 
     inspectBundle(outputDir, manifest);
+
+    return outputDir;
 };
 
 try {
     mkdirSync(packDir);
-    cpSync(fixtureDir, consumerDir, {recursive: true});
+    cpSync(fixtureDir, consumerDir, {filter: shouldCopyFixtureEntry, recursive: true});
 
     const packOutput = run("pnpm", ["pack", "--pack-destination", packDir, "--json"], packageDir);
     const tarballs = collectFiles(packDir).filter(file => file.endsWith(".tgz"));
@@ -125,7 +142,7 @@ try {
     consumerPackage.dependencies["@adnbn/plugin-reg-cs"] = `file:${tarball}`;
     writeFileSync(consumerPackagePath, `${JSON.stringify(consumerPackage, null, 2)}\n`);
 
-    run("pnpm", ["install", "--ignore-scripts", "--no-frozen-lockfile"], consumerDir);
+    run("pnpm", ["install", "--ignore-scripts", "--no-frozen-lockfile", "--store-dir", storeDir], consumerDir);
 
     const installedPackageDir = path.join(consumerDir, "node_modules/@adnbn/plugin-reg-cs");
     const installedPackageRealpath = realpathSync(installedPackageDir);
@@ -158,10 +175,22 @@ try {
         `Packed plugin contains runtime JavaScript: ${runtimeJavaScript.join(", ")}`
     );
 
-    buildAndInspect({browser: "chrome", manifestVersion: 3});
-    buildAndInspect({browser: "firefox", manifestVersion: 2});
+    const buildDirectories = [
+        buildAndInspect({browser: "chrome", manifestVersion: 3}),
+        buildAndInspect({browser: "firefox", manifestVersion: 2}),
+    ];
 
     console.log(`Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome MV3 and Firefox MV2 builds.`);
+
+    if (process.argv.includes("--keep-output")) {
+        for (const buildDirectory of buildDirectories) {
+            const destination = path.join(repoRoot, "output/plugin-reg-cs", path.basename(buildDirectory));
+
+            rmSync(destination, {recursive: true, force: true});
+            cpSync(buildDirectory, destination, {recursive: true});
+            console.log(`Manual extension build: ${destination}`);
+        }
+    }
 } finally {
     if (process.env.KEEP_SMOKE_TEMP === "1") {
         console.log(`Consumer smoke workspace kept at ${temporaryRoot}`);

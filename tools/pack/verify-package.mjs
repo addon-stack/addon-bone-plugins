@@ -43,7 +43,7 @@ const metadata = Array.isArray(packResult) ? packResult[0] : packResult;
 const files = new Set((metadata.files ?? []).map(file => file.path.replace(/^package\//, "").replace(/^\.\//, "")));
 
 const requiredFiles = [
-    "LICENSE.md.md",
+    "LICENSE.md",
     "README.md",
     "dist-types/background.d.ts",
     "dist-types/background.d.ts.map",
@@ -58,6 +58,18 @@ const missingFiles = requiredFiles.filter(file => !files.has(file));
 
 if (missingFiles.length > 0) {
     throw new Error(`Packed package is missing required files: ${missingFiles.join(", ")}`);
+}
+
+const rawTypeScriptFiles = [...files].filter(file => file.startsWith("plugin/") && file.endsWith(".ts"));
+const missingDeclarations = rawTypeScriptFiles.flatMap(file => {
+    const declaration = file.replace(/^plugin\//, "dist-types/").replace(/\.ts$/, ".d.ts");
+    const declarationMap = `${declaration}.map`;
+
+    return [declaration, declarationMap].filter(expected => !files.has(expected));
+});
+
+if (missingDeclarations.length > 0) {
+    throw new Error(`Packed package is missing declarations for raw TypeScript: ${missingDeclarations.join(", ")}`);
 }
 
 const forbiddenFiles = [...files].filter(
@@ -87,17 +99,7 @@ for (const entry of exportsEntries) {
     }
 }
 
-const forbiddenTooling = [
-    "vite",
-    "vitest",
-    "@rsbuild/core",
-    "@rspack/core",
-    "@rspack/cli",
-    "@rslib/core",
-    "tsup",
-    "rollup",
-    "esbuild",
-];
+const forbiddenTooling = ["vite", "vitest", "@rsbuild/core", "@rspack/cli", "@rslib/core", "tsup", "rollup", "esbuild"];
 const dependencyGroups = [
     packageJson.dependencies,
     packageJson.devDependencies,
@@ -109,6 +111,10 @@ const forbiddenDependencies = forbiddenTooling.filter(dependency => declaredDepe
 
 if (forbiddenDependencies.length > 0) {
     throw new Error(`Package declares forbidden build tooling: ${forbiddenDependencies.join(", ")}`);
+}
+
+if (packageJson.peerDependencies?.["@rspack/core"] && packageJson.dependencies?.["@rspack/core"]) {
+    throw new Error("@rspack/core must remain a config-time peer and must not become a package runtime dependency");
 }
 
 console.log(

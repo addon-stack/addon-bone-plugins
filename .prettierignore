@@ -3,6 +3,7 @@ coverage/
 dist/
 dist-types/
 node_modules/
+/output/
 package/
 pnpm-lock.yaml
 **/CHANGELOG.md

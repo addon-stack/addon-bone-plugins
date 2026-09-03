@@ -29,11 +29,11 @@
     "url": "https://github.com/addon-stack/addon-bone-plugins/issues"
   },
   "license": "MIT",
-  "author": "Addon Stack <addonbonedev@gmail.com>",
-  "contributors": [
-    "Anjey Tsibylskij (https://github.com/atldays)"
-  ],
+  "author": "Anjey Tsibylskij (https://github.com/atldays)",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "files": [
     "plugin",
     "dist-types"
@@ -55,17 +55,18 @@
     "lint:fix": "eslint . --fix && prettier --write . --ignore-path ../../../.prettierignore",
     "pack:check": "node ../../../tools/pack/verify-package.mjs .",
     "prepack": "pnpm types",
-    "test": "rstest run --config rstest.config.ts",
-    "test:coverage": "rstest run --config rstest.config.ts --coverage",
-    "test:watch": "rstest watch --config rstest.config.ts",
+    "test": "jest --config jest.config.cjs --runInBand",
+    "test:coverage": "jest --config jest.config.cjs --coverage --runInBand",
+    "test:watch": "jest --config jest.config.cjs --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "types": "tsc -p tsconfig.build.json",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.7.2",
-    "@addon-core/inject-css": "^0.3.1",
-    "@addon-core/inject-script": "^0.3.1"
+    "@addon-core/browser": "^0.8.0",
+    "@addon-core/inject-css": "^0.4.0",
+    "@addon-core/inject-script": "^0.5.0",
+    "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.2",

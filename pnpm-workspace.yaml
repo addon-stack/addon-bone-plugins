@@ -1,7 +1,14 @@
 packages:
   - packages/@adnbn/*
+  - tests/fixtures/*
 
 allowBuilds:
   "@parcel/watcher": true
+  "@swc/core": true
   adnbn: true
   nx: true
+  unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - "@addon-core/browser@0.8.0"
+  - "@addon-core/inject-css@0.4.0"

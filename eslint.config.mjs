@@ -12,6 +12,7 @@ export default defineConfig([
         "dist/**",
         "dist-types/**",
         "node_modules/**",
+        "output/**",
         "package/**",
         "packages/**/dist-types/**",
     ]),

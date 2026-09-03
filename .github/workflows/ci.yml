@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [22, 24]
+        node: [24]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,7 +67,6 @@ jobs:
           HUSKY: "0"
 
       - name: Check Conventional Commits
-        if: matrix.node == 22
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -108,6 +107,11 @@ jobs:
 
       - name: Verify workspace
         run: pnpm verify
+        env:
+          CI: "true"
+
+      - name: Verify Chrome MV3 and Firefox MV2 runtimes
+        run: pnpm check:browser
         env:
           CI: "true"
 

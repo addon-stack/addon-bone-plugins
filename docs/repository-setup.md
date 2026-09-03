@@ -18,7 +18,7 @@ monorepo release have been checked from GitHub.
 ## Branch policy
 
 Protect `main` with pull requests and require the single aggregate status check named `verify`. That job depends on
-workflow lint and the Node.js 22/24 verification matrix, so the required-check name remains stable if the matrix is
+workflow lint and the Node.js 24 verification job, so the required-check name remains stable if the runtime baseline is
 changed later. The workflow also handles GitHub merge queues through the `merge_group` event.
 
 Recommended policy:

@@ -1,14 +1,20 @@
+import "./smoke.css";
+
 import {defineContentScript} from "adnbn";
 
 export default defineContentScript({
-    matches: ["https://example.com/*"],
+    allFrames: true,
+    matches: ["http://127.0.0.1/*"],
     declarative: true,
     runAt: "document_idle",
     main() {
-        const smokeGlobal = globalThis as typeof globalThis & {
-            __adnbnPluginRegCsSmoke?: boolean;
-        };
+        const root = document.documentElement;
+        const runCount = Number(root.dataset.adnbnPluginRegCsRuns ?? 0) + 1;
 
-        smokeGlobal.__adnbnPluginRegCsSmoke = true;
+        root.dataset.adnbnPluginRegCsCss = getComputedStyle(root)
+            .getPropertyValue("--adnbn-plugin-reg-cs-smoke")
+            .trim();
+        root.dataset.adnbnPluginRegCsFrame = window === window.top ? "top" : "child";
+        root.dataset.adnbnPluginRegCsRuns = String(runCount);
     },
 });

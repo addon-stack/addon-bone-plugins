@@ -1,7 +1,15 @@
 {
-  "extends": "./.adnbn/tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["chrome"]
   },
   "include": ["adnbn.config.ts", "src/**/*.ts"]
 }

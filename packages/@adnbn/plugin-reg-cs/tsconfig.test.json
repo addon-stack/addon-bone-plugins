@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["chrome", "node"]
+    "types": ["chrome", "jest", "node"]
   },
-  "include": ["./plugin/**/*.ts", "./tests/**/*.ts", "./rstest.config.ts"]
+  "include": ["./plugin/**/*.ts", "./tests/**/*.ts"]
 }

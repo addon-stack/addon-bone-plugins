@@ -5,93 +5,72 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 [![CI](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml)
 
-A plugin for [Addon Bone](https://addonbone.com) that automatically registers and injects content scripts on first install, as soon as the required permissions are granted.
-
-## Key Features
-
-- **Immediate Content Script Activation**: Injects your content scripts into already open tabs that match your URL patterns right after installation (no manual refresh needed)
-- **Respects Permissions Flow**: Waits for required API and host permissions; injects immediately when they are available (either granted at install or later)
-- **Full Support for Content Script Options**: Works with manifest content script properties including `run_at`, `all_frames`, `match_about_blank`, and execution world
-- **Error Handling**: Uses best‑effort injection with detailed error logging without blocking other tabs/files
-- **Zero Configuration**: Works out of the box with your existing manifest content script definitions
-
-## How It Works
-
-On the extension’s initial install (not on updates), the plugin:
-
-1. Reads your manifest’s `content_scripts` and collects URL patterns from each script’s `matches`.
-2. Treats those URL patterns as required host permissions, alongside the API permissions `tabs` and `scripting`.
-3. Checks whether these permissions are already granted:
-    - If yes, it immediately injects the specified JS and CSS files into all currently open tabs that match.
-    - If not, it subscribes to permission changes and automatically injects once the browser/user grants them (no reload required). The listener is removed after injection.
-4. Injection behavior:
-    - Skips tabs that are frozen or discarded and only injects into tabs with a valid ID.
-    - JavaScript is injected with support for `run_at`, `match_about_blank`, `all_frames`, and execution `world`.
-    - CSS is injected with support for `run_at` and `match_about_blank`.
-    - Errors for individual files/tabs are logged but do not stop other injections (best‑effort via Promise.allSettled).
-
-Note: This automatic registration runs only on the first install event. It doesn’t re‑run on extension updates.
-
-## Required Permissions
-
-This plugin relies on the following permissions:
-
-- **`tabs`**: Needed to query and access tab information for content script injection
-- **`scripting`**: Required to inject scripts and CSS into web pages
-- **Host permissions for your `matches`**: The same URL patterns you use in `content_scripts.matches`
-
-The plugin declares and checks these permissions and injects as soon as the browser grants them. It does not actively call `chrome.permissions.request`; ensure your manifest and/or your own UI flow prompts the user to grant the needed host permissions.
+An Addon Bone plugin that activates declarative content scripts in loaded tabs that were already open when the
+extension was first installed. Normal browser navigation continues to use the manifest's native `content_scripts`
+behavior.
 
 ## Installation
 
-Using npm:
-
-```bash
-npm install @adnbn/plugin-reg-cs
-```
-
-Using Yarn:
-
-```bash
-yarn add @adnbn/plugin-reg-cs
-```
-
-Using pnpm:
-
-```bash
+```sh
 pnpm add @adnbn/plugin-reg-cs
 ```
 
 ## Usage
 
-### Basic Setup
-
-In your `adnbn.config.ts`:
-
 ```ts
-import {defineConfig} from "adnbn";
 import registerContentScript from "@adnbn/plugin-reg-cs";
+import {defineConfig} from "adnbn";
 
 export default defineConfig({
     plugins: [registerContentScript()],
-    // other Addon Bone settings...
 });
 ```
 
+The plugin intentionally has no runtime options. On a fresh installation it:
+
+1. reads the native `content_scripts` declarations from the built manifest;
+2. checks host permissions independently for each declaration;
+3. finds completely loaded, non-discarded, non-frozen tabs matching that declaration, whether active or in the background;
+4. applies `exclude_matches`, `include_globs`, and `exclude_globs` to the tab URL;
+5. injects the declaration's CSS and JavaScript.
+
+Firefox already activates declarative content scripts in existing tabs during installation, so the plugin detects that
+build target synchronously through Addon Bone's `getBrowser()` and exits to avoid running every content script twice.
+
+Chromium catch-up skips discarded, frozen, and still-loading tabs. Frozen tabs retain their contents in memory but
+cannot execute tasks; discarded tabs have already had their contents unloaded from memory. The plugin does not
+activate, reload, or unfreeze tabs to inject into them. Skipped tabs are not persisted or processed later. A future
+opt-in mode may add deferred activation without changing this default behavior. See the
+[Chrome tab lifecycle properties](https://developer.chrome.com/docs/extensions/reference/api/tabs#type-Tab).
+
+The plugin never requests permissions and does not wait for optional host permissions granted after installation.
+
+## Execution guarantees
+
+Manifest declarations are processed sequentially in their declared order. For every matching tab, CSS is awaited
+before JavaScript is attempted. The full CSS or JavaScript file array is passed to the corresponding injection package,
+which preserves its order. A CSS failure is logged but does not block the JavaScript attempt. Independent eligible tabs
+from the same declaration run concurrently, and one failed tab does not stop the others.
+
+`all_frames` uses the browser's native all-frames injection target. Matching is exact for the top-level tab URL and
+best-effort for its child frames; the plugin does not request `webNavigation` or enumerate frames.
+
+`run_at` cannot replay a lifecycle point that passed before installation, so it is not forwarded during this catch-up
+injection. Future page loads still follow the native manifest declaration.
+
+## Runtime requirements
+
+Development and consumer builds require Node.js 24 or newer. URL matching uses `webext-patterns@3`, whose
+`RegExp.escape` dependency sets the minimum browser runtime to Chromium 136, Firefox 134, and Safari 18.2.
+
+The background entrypoint declares only `tabs` and `scripting`; Addon Bone translates the API permissions for the
+selected manifest version. The extension still needs the host access implied by its own content-script declarations.
+
 ## Package format
 
-The runtime implementation is intentionally published as raw TypeScript. Addon Bone resolves and compiles it as part
-of the consuming extension build. The package generates TypeScript declarations only; it does not ship a JavaScript
-bundle.
+The implementation is published as raw TypeScript under `plugin/`, together with generated declarations under
+`dist-types/`. Addon Bone owns all consumer-side production transpilation and bundling. This package has no JavaScript
+build target and intentionally does not use Vite, Vitest, Rsbuild, or Rspack. Jest and its SWC transform are test-only.
 
 Development and release infrastructure lives in the
 [Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).
-
-## Troubleshooting
-
-If your content scripts aren't being injected:
-
-- Ensure the necessary URL patterns are present in `host_permissions` (or are otherwise granted by the user); without host permissions the API can’t access those tabs
-- Remember: injection is triggered only on the initial install. To re‑test, remove the extension and install it again
-- Some pages (e.g., Chrome Web Store, browser internal pages) are restricted and cannot be scripted
-- If a tab is discarded/frozen, wake it (focus or reload) and try again

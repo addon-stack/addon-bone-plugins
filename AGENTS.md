@@ -17,13 +17,30 @@
 
 ## Tests
 
-- Unit tests use Rstest in the Node environment.
-- Rstest's internal Rsbuild/Rspack transform is test-only and must not produce or publish package artifacts.
+- Unit tests use Jest in the Node environment. Test transforms must not produce or publish package artifacts.
+- Browser-facing tests use the published `@addon-core/browser/testing` harness and fixtures. Keep browser wrappers
+  and injection packages real; configure native results/errors through the harness instead of mocking those modules.
+- Restore harness globals after every test. URL queries and host permissions use the harness state by default;
+  reserve explicit result overrides for malformed responses or unsupported scenarios. Keep real-browser smoke tests.
 - Do not add Vite adapters, Testing Library, DOM emulation, or Browser Mode without a concrete test that requires it.
 - A test runner does not replace `tsc --noEmit`, declaration emission, tarball validation, or the Addon Bone consumer
   smoke.
 - Consumer validation must install a freshly packed tarball; do not validate through a workspace link or neighboring
   checkout.
+
+## Injection architecture
+
+- Addon Bone is the only production compiler. Packages must not add a Rspack build target or emit a JavaScript bundle.
+- Do not introduce Vite or Vitest. The Addon Bone runtime and Rspack consumer pipeline are the integration boundary.
+- `@adnbn/plugin-reg-cs` reads the native built-manifest content-script contract and delegates URL pattern and glob
+  matching to `webext-patterns`; do not add a second normalized content-script model or a hand-written matcher.
+- Install catch-up processes all matching complete, non-discarded, non-frozen tabs, whether active or in the background.
+  Do not activate, reload, or unfreeze tabs for injection. Do not add persistence, permission waiting, background-tab
+  listeners, or deferred activation without an explicit opt-in product decision.
+- Firefox performs install-time catch-up natively; use Addon Bone's synchronous `getBrowser()` build target and keep
+  the explicit Firefox early return to avoid duplicate execution. Do not infer the target browser at runtime.
+- Process declarations in manifest order. Within a tab, await the whole CSS array before attempting the whole JavaScript
+  array; parallelism and `Promise.allSettled` are limited to independent eligible tabs in one declaration.
 
 ## Workspace and releases
 
