@@ -1,13 +1,19 @@
 # @adnbn/plugin-reg-cs
 
-[![npm version](https://img.shields.io/npm/v/@adnbn/plugin-reg-cs.svg?logo=npm)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
-[![npm downloads](https://img.shields.io/npm/dm/@adnbn/plugin-reg-cs.svg)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
-[![CI](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml)
+Make your extension ready on first install, even when matching pages are already open.
 
-An Addon Bone plugin that activates declarative content scripts in loaded tabs that were already open when the
-extension was first installed. Normal browser navigation continues to use the manifest's native `content_scripts`
-behavior.
+[![npm version](https://img.shields.io/npm/v/%40adnbn%2Fplugin-reg-cs.svg?logo=npm&style=for-the-badge)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
+[![npm downloads](https://img.shields.io/npm/dm/%40adnbn%2Fplugin-reg-cs.svg?style=for-the-badge&color=blue)](https://www.npmjs.com/package/@adnbn/plugin-reg-cs)
+[![CI](https://img.shields.io/github/actions/workflow/status/addon-stack/addon-bone-plugins/ci.yml?style=for-the-badge)](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
+
+## Purpose
+
+`@adnbn/plugin-reg-cs` closes the install-time gap for declarative content scripts. On supported non-Firefox builds,
+it performs one safe catch-up pass for eligible pages that finished loading before the extension was installed. Future
+page loads continue to use the browser's native `content_scripts` behavior.
+
+Use it when the first-run experience should work without asking the user to reload tabs that are already open.
 
 ## Installation
 
@@ -15,62 +21,92 @@ behavior.
 pnpm add @adnbn/plugin-reg-cs
 ```
 
-## Usage
+## Quick start
 
 ```ts
-import registerContentScript from "@adnbn/plugin-reg-cs";
 import {defineConfig} from "adnbn";
+import registerContentScript from "@adnbn/plugin-reg-cs";
 
 export default defineConfig({
     plugins: [registerContentScript()],
 });
 ```
 
-The plugin intentionally has no runtime options. On a fresh installation it:
+The plugin has no runtime options. Keep defining content scripts through the normal Addon Bone entrypoints and manifest
+contract.
 
-1. reads the native `content_scripts` declarations from the built manifest;
-2. checks host permissions independently for each declaration;
-3. finds completely loaded, non-discarded, non-frozen tabs matching that declaration, whether active or in the background;
-4. applies `exclude_matches`, `include_globs`, and `exclude_globs` to the tab URL;
-5. injects the declaration's CSS and JavaScript.
+## Permissions
 
-Firefox already activates declarative content scripts in existing tabs during installation, so the plugin detects that
-build target synchronously through Addon Bone's `getBrowser()` and exits to avoid running every content script twice.
+The plugin adds the API permissions it needs through its Addon Bone background entrypoint. It does not request optional
+permissions at runtime. The suggested justifications below describe this plugin's behavior; extend them if the consumer
+extension uses the same permissions for other features.
 
-Chromium catch-up skips discarded, frozen, and still-loading tabs. Frozen tabs retain their contents in memory but
-cannot execute tasks; discarded tabs have already had their contents unloaded from memory. The plugin does not
-activate, reload, or unfreeze tabs to inject into them. Skipped tabs are not persisted or processed later. A future
-opt-in mode may add deferred activation without changing this default behavior. See the
-[Chrome tab lifecycle properties](https://developer.chrome.com/docs/extensions/reference/api/tabs#type-Tab).
+### `tabs`
 
-The plugin never requests permissions and does not wait for optional host permissions granted after installation.
+Added in Manifest V2 and V3. The plugin uses it during the initial installation to find matching tabs and exclude pages
+that are still loading, discarded, or frozen. It does not subscribe to future navigation or read browser history.
 
-## Execution guarantees
+Suggested store justification:
 
-Manifest declarations are processed sequentially in their declared order. For every matching tab, CSS is awaited
-before JavaScript is attempted. The full CSS or JavaScript file array is passed to the corresponding injection package,
-which preserves its order. A CSS failure is logged but does not block the JavaScript attempt. Independent eligible tabs
-from the same declaration run concurrently, and one failed tab does not stop the others.
+```text
+The tabs permission is used only when the extension is first installed to find already-open, fully loaded tabs that
+match its declared content scripts. The extension does not use this permission to read browsing history or monitor
+future navigation.
+```
 
-`all_frames` uses the browser's native all-frames injection target. Matching is exact for the top-level tab URL and
-best-effort for its child frames; the plugin does not request `webNavigation` or enumerate frames.
+### `scripting`
 
-`run_at` cannot replay a lifecycle point that passed before installation, so it is not forwarded during this catch-up
-injection. Future page loads still follow the native manifest declaration.
+Added in Manifest V3. It allows the plugin to apply the extension's already-declared CSS and JavaScript files to
+eligible tabs that were open before installation. Manifest V2 uses its native tab injection APIs instead.
 
-## Runtime requirements
+Suggested store justification:
 
-Development and consumer builds require Node.js 24 or newer. URL matching uses `webext-patterns@3`, whose
-`RegExp.escape` dependency sets the minimum browser runtime to Chromium 136, Firefox 134, and Safari 18.2.
+```text
+The scripting permission is used only when the extension is first installed to apply its packaged, declarative
+content scripts to matching pages that are already open. It does not execute remote code or inject outside the host
+access and content-script files declared by the extension.
+```
 
-The background entrypoint declares only `tabs` and `scripting`; Addon Bone translates the API permissions for the
-selected manifest version. The extension still needs the host access implied by its own content-script declarations.
+### Host access
 
-## Package format
+The plugin does not add domains or request host access itself. Host access comes from the consumer extension's own
+`content_scripts.matches` declarations. Addon Bone emits those patterns as `host_permissions` in Manifest V3 and as
+regular permissions in Manifest V2. A declaration is skipped when its required host access is unavailable.
 
-The implementation is published as raw TypeScript under `plugin/`, together with generated declarations under
-`dist-types/`. Addon Bone owns all consumer-side production transpilation and bundling. This package has no JavaScript
-build target and intentionally does not use Vite, Vitest, Rsbuild, or Rspack. Jest and its SWC transform are test-only.
+Baseline host-access justification:
 
-Development and release infrastructure lives in the
+```text
+Host access is required to run the extension's declared content scripts and provide its on-page functionality on
+matching sites. Access is limited to the URL patterns declared by the extension.
+```
+
+Adapt this baseline when Chrome Web Store or another browser marketplace asks for the extension's specific user-facing
+purpose or data usage.
+
+## How it works
+
+On the initial install, the plugin:
+
+1. reads `content_scripts` from the built manifest;
+2. checks host access independently for every declaration;
+3. finds matching, fully loaded, non-discarded, and non-frozen tabs, whether active or in the background;
+4. applies the declaration's match, exclude, and glob rules;
+5. injects the complete CSS file list before attempting the complete JavaScript file list.
+
+Declarations run in manifest order. Eligible tabs within one declaration run independently, so one failed tab does
+not stop the others. A CSS failure is logged but does not prevent the JavaScript attempt.
+
+Firefox already catches up declarative content scripts during installation. The plugin uses Addon Bone's synchronous
+build target and exits on Firefox to avoid duplicate execution.
+
+## Behavior and limits
+
+- Catch-up runs only for a fresh installation, not for an update or extension reload.
+- The plugin never activates, reloads, unfreezes, or restores a discarded tab.
+- Skipped tabs are not persisted or processed later.
+- `all_frames` uses the browser's native all-frame target. Top-level URL matching is exact; child-frame matching is
+  best effort without the `webNavigation` permission.
+- `run_at` cannot replay a lifecycle point that has already passed, so it is not forwarded during catch-up.
+
+Development, testing, and release infrastructure lives in the
 [Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).

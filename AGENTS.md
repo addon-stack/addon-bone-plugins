@@ -52,6 +52,16 @@
 - Preserve imported release tags: they are version baselines, not disposable migration artifacts.
 - Use Conventional Commit scopes from `commitlint.config.mjs` and add a new full package name there when scope expands.
 
+## Package documentation
+
+- Keep the workspace README presentation-focused and link every available package to its package directory.
+- Follow the package README order defined in `CONTRIBUTING.md`; use the `@adnbn/plugin-reg-cs` README as the current
+  reference.
+- Use npm version, monthly downloads, CI, and license badges with Shields.io's `for-the-badge` style.
+- Document every automatically added permission, why it is needed, and a copy-ready baseline store justification.
+  Document consumer-owned host access separately, and state explicitly when a package adds no permissions.
+- Keep the first example minimal and explain runtime flow, guarantees, and limitations in plain developer-facing prose.
+
 ## Validation
 
 - Run the narrow package check while iterating and `pnpm verify` before handoff.
