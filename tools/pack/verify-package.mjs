@@ -61,6 +61,7 @@ if (missingFiles.length > 0) {
 }
 
 const rawTypeScriptFiles = [...files].filter(file => file.startsWith("plugin/") && file.endsWith(".ts"));
+
 const missingDeclarations = rawTypeScriptFiles.flatMap(file => {
     const declaration = file.replace(/^plugin\//, "dist-types/").replace(/\.ts$/, ".d.ts");
     const declarationMap = `${declaration}.map`;
@@ -100,12 +101,14 @@ for (const entry of exportsEntries) {
 }
 
 const forbiddenTooling = ["vite", "vitest", "@rsbuild/core", "@rspack/cli", "@rslib/core", "tsup", "rollup", "esbuild"];
+
 const dependencyGroups = [
     packageJson.dependencies,
     packageJson.devDependencies,
     packageJson.optionalDependencies,
     packageJson.peerDependencies,
 ];
+
 const declaredDependencies = new Set(dependencyGroups.flatMap(group => Object.keys(group ?? {})));
 const forbiddenDependencies = forbiddenTooling.filter(dependency => declaredDependencies.has(dependency));
 
@@ -118,5 +121,6 @@ if (packageJson.peerDependencies?.["@rspack/core"] && packageJson.dependencies?.
 }
 
 console.log(
-    `Verified ${packageJson.name}@${packageJson.version}: ${files.size} packed files, raw TypeScript + declarations only.`
+    `Verified ${packageJson.name}@${packageJson.version}: ${files.size} packed files, ` +
+        "raw TypeScript + declarations only."
 );

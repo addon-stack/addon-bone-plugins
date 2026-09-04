@@ -1,6 +1,6 @@
 const defaultVersionActions = require("@nx/js/src/release/version-actions");
 
-class AddonBonePluginsVersionActions extends defaultVersionActions.default {
+class VersionActions extends defaultVersionActions.default {
     async calculateNewVersion(
         currentVersion,
         newVersionInput,
@@ -9,12 +9,13 @@ class AddonBonePluginsVersionActions extends defaultVersionActions.default {
         preid
     ) {
         const isPreOneMajor = currentVersion?.startsWith("0.");
+
         const adjustedInput =
             isPreOneMajor && newVersionInput === "major"
                 ? "minor"
                 : isPreOneMajor && newVersionInput === "premajor"
-                  ? "preminor"
-                  : newVersionInput;
+                    ? "preminor"
+                    : newVersionInput;
 
         const result = await super.calculateNewVersion(
             currentVersion,
@@ -35,5 +36,5 @@ class AddonBonePluginsVersionActions extends defaultVersionActions.default {
     }
 }
 
-module.exports = AddonBonePluginsVersionActions;
+module.exports = VersionActions;
 module.exports.afterAllProjectsVersioned = defaultVersionActions.afterAllProjectsVersioned;

@@ -1,6 +1,6 @@
-import "./smoke.css";
-
 import {defineContentScript} from "adnbn";
+
+import "./smoke.css";
 
 export default defineContentScript({
     allFrames: true,
@@ -14,6 +14,7 @@ export default defineContentScript({
         root.dataset.adnbnPluginRegCsCss = getComputedStyle(root)
             .getPropertyValue("--adnbn-plugin-reg-cs-smoke")
             .trim();
+
         root.dataset.adnbnPluginRegCsFrame = window === window.top ? "top" : "child";
         root.dataset.adnbnPluginRegCsRuns = String(runCount);
     },

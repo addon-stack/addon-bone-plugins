@@ -2,7 +2,10 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "main",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "sharedGlobals": [
       "{workspaceRoot}/.editorconfig",
       "{workspaceRoot}/package.json",
@@ -11,18 +14,22 @@
       "{workspaceRoot}/.npmrc",
       "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/eslint.config.mjs",
-      "{workspaceRoot}/prettier.config.mjs",
-      "{workspaceRoot}/.prettierignore",
+      "{workspaceRoot}/tools/eslint/**/*",
       "{workspaceRoot}/tools/pack/**/*"
     ]
   },
   "targetDefaults": {
     "nx:run-commands": {
-      "inputs": ["default", "^default"]
+      "inputs": [
+        "default",
+        "^default"
+      ]
     }
   },
   "release": {
-    "projects": ["packages/@adnbn/*"],
+    "projects": [
+      "packages/@adnbn/*"
+    ],
     "projectsRelationship": "independent",
     "releaseTag": {
       "pattern": "{projectName}@{version}"
@@ -34,7 +41,7 @@
       "conventionalCommits": true,
       "adjustSemverBumpsForZeroMajorVersion": false,
       "updateDependents": "always",
-      "versionActions": "./tools/release/version-actions.cjs"
+      "versionActions": "./tools/release/VersionActions.cjs"
     },
     "changelog": {
       "projectChangelogs": {

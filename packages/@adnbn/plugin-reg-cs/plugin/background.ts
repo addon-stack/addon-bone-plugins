@@ -1,14 +1,18 @@
+import {Browser, defineBackground, getBrowser} from "adnbn";
+
 import {containsPermissions, getManifest, isManifestVersion3, onInstalled, queryTabs} from "@addon-core/browser";
 import injectCss, {type InjectCssTarget, type NonEmptyReadonlyArray} from "@addon-core/inject-css";
 import injectScript from "@addon-core/inject-script";
-import {Browser, defineBackground, getBrowser} from "adnbn";
+
 import {globToRegex, testPatterns} from "webext-patterns";
 
 type ManifestContentScript = NonNullable<chrome.runtime.Manifest["content_scripts"]>[number];
+
 type ContentScript = ManifestContentScript & {
     css_origin?: chrome.scripting.StyleOrigin;
     world?: chrome.scripting.ExecutionWorld;
 };
+
 type InjectableTab = chrome.tabs.Tab & {id: number; url: string};
 
 const logFailure = (phase: "permission" | "query" | "css" | "js", error: unknown, details = {}): void => {
@@ -44,10 +48,21 @@ const withoutFragment = (url: string): string | undefined => {
 const matchesContentScript = (contentScript: ContentScript, url: string): boolean => {
     const matchUrl = withoutFragment(url);
 
-    if (!matchUrl || !contentScript.matches?.length || !testPatterns(matchUrl, contentScript.matches)) return false;
-    if (contentScript.exclude_matches?.length && testPatterns(matchUrl, contentScript.exclude_matches)) return false;
-    if (contentScript.include_globs?.length && !globToRegex(...contentScript.include_globs).test(url)) return false;
-    if (contentScript.exclude_globs?.length && globToRegex(...contentScript.exclude_globs).test(url)) return false;
+    if (!matchUrl || !contentScript.matches?.length || !testPatterns(matchUrl, contentScript.matches)) {
+        return false;
+    }
+
+    if (contentScript.exclude_matches?.length && testPatterns(matchUrl, contentScript.exclude_matches)) {
+        return false;
+    }
+
+    if (contentScript.include_globs?.length && !globToRegex(...contentScript.include_globs).test(url)) {
+        return false;
+    }
+
+    if (contentScript.exclude_globs?.length && globToRegex(...contentScript.exclude_globs).test(url)) {
+        return false;
+    }
 
     return true;
 };
@@ -92,12 +107,17 @@ const activateDeclaration = async (
     declarationIndex: number,
     manifestVersion3: boolean
 ): Promise<void> => {
-    if (!contentScript.matches?.length) return;
+    if (!contentScript.matches?.length) {
+        return;
+    }
 
     try {
-        if (!(await containsPermissions({origins: [...contentScript.matches]}))) return;
+        if (!(await containsPermissions({origins: [...contentScript.matches]}))) {
+            return;
+        }
     } catch (error) {
         logFailure("permission", error, {declarationIndex});
+
         return;
     }
 
@@ -111,17 +131,21 @@ const activateDeclaration = async (
         });
     } catch (error) {
         logFailure("query", error, {declarationIndex});
+
         return;
     }
 
     const injectableTabs = tabs.filter(isInjectableTab).filter(tab => matchesContentScript(contentScript, tab.url));
+
     await Promise.allSettled(
         injectableTabs.map(tab => injectContentScript(contentScript, declarationIndex, tab, manifestVersion3))
     );
 };
 
 const activateContentScripts = async (): Promise<void> => {
-    if (getBrowser() === Browser.Firefox) return;
+    if (getBrowser() === Browser.Firefox) {
+        return;
+    }
 
     const contentScripts = (getManifest().content_scripts ?? []) as ContentScript[];
     const manifestVersion3 = isManifestVersion3();

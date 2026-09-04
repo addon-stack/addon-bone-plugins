@@ -51,8 +51,8 @@
   },
   "scripts": {
     "build:types": "pnpm types",
-    "lint": "eslint . && prettier --check . --ignore-path ../../../.prettierignore",
-    "lint:fix": "eslint . --fix && prettier --write . --ignore-path ../../../.prettierignore",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix --max-warnings 0",
     "pack:check": "node ../../../tools/pack/verify-package.mjs .",
     "prepack": "pnpm types",
     "test": "jest --config jest.config.cjs --runInBand",

@@ -12,7 +12,9 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const consumerSmoke = path.join(repoRoot, "tools/smoke/plugin-reg-cs-consumer.mjs");
 
 const assert = (condition, message) => {
-    if (!condition) throw new Error(message);
+    if (!condition) {
+        throw new Error(message);
+    }
 };
 
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -25,7 +27,9 @@ const waitFor = async (callback, label, timeout = 20_000) => {
         try {
             const value = await callback();
 
-            if (value !== undefined) return value;
+            if (value !== undefined) {
+                return value;
+            }
         } catch (error) {
             lastError = error;
         }
@@ -42,12 +46,14 @@ const getFreePort = () => {
         const server = createNetServer();
 
         server.once("error", reject);
+
         server.listen(0, "127.0.0.1", () => {
             const address = server.address();
 
             if (!address || typeof address === "string") {
                 server.close();
                 reject(new Error("Unable to reserve a browser debugging port"));
+
                 return;
             }
 
@@ -57,11 +63,14 @@ const getFreePort = () => {
 };
 
 const stopProcess = async process => {
-    if (!process || process.exitCode !== null || process.killed) return;
+    if (!process || process.exitCode !== null || process.killed) {
+        return;
+    }
 
     const waitForExit = timeout =>
         new Promise(resolve => {
             const timer = setTimeout(() => resolve(false), timeout);
+
             process.once("exit", () => {
                 clearTimeout(timer);
                 resolve(true);
@@ -91,6 +100,7 @@ class RpcClient {
     static connect(url, timeout = 15_000) {
         return new Promise((resolve, reject) => {
             const socket = new WebSocket(url);
+
             const timer = setTimeout(() => {
                 socket.close();
                 reject(new Error(`Timed out connecting to ${url}`));
@@ -104,6 +114,7 @@ class RpcClient {
                 },
                 {once: true}
             );
+
             socket.addEventListener(
                 "error",
                 () => {
@@ -130,10 +141,13 @@ class RpcClient {
     }
 
     async close() {
-        if (this.socket.readyState === WebSocket.CLOSED) return;
+        if (this.socket.readyState === WebSocket.CLOSED) {
+            return;
+        }
 
         await new Promise(resolve => {
             const timer = setTimeout(resolve, 1_000);
+
             this.socket.addEventListener(
                 "close",
                 () => {
@@ -142,6 +156,7 @@ class RpcClient {
                 },
                 {once: true}
             );
+
             this.socket.close();
         });
     }
@@ -161,11 +176,15 @@ class RpcClient {
             this.errors.push(message.params.text ?? "Firefox runtime error");
         }
 
-        if (message.id === undefined) return;
+        if (message.id === undefined) {
+            return;
+        }
 
         const pending = this.pending.get(message.id);
 
-        if (!pending) return;
+        if (!pending) {
+            return;
+        }
 
         this.pending.delete(message.id);
         clearTimeout(pending.timer);
@@ -182,12 +201,15 @@ class RpcClient {
             clearTimeout(pending.timer);
             pending.reject(error);
         }
+
         this.pending.clear();
     }
 }
 
 const findBinary = (environmentName, candidates) => {
-    if (process.env[environmentName]) return process.env[environmentName];
+    if (process.env[environmentName]) {
+        return process.env[environmentName];
+    }
 
     return candidates.find(candidate => existsSync(candidate));
 };
@@ -199,6 +221,7 @@ const chromeBinary = findBinary("ADNBN_CHROME_BIN", [
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
 ]);
+
 const firefoxBinary = findBinary("ADNBN_FIREFOX_BIN", [
     "/Applications/Firefox.app/Contents/MacOS/firefox",
     "/usr/bin/firefox",
@@ -211,6 +234,7 @@ const buildPackedConsumer = () => {
         env: {...process.env, CI: "true", KEEP_SMOKE_TEMP: "1"},
         stdio: "pipe",
     });
+
     const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
 
     if (result.status !== 0) {
@@ -219,7 +243,9 @@ const buildPackedConsumer = () => {
 
     const temporaryRoot = /Consumer smoke workspace kept at (.+)/.exec(output)?.[1]?.trim();
 
-    if (!temporaryRoot) throw new Error(`Consumer smoke did not report its temporary workspace:\n${output}`);
+    if (!temporaryRoot) {
+        throw new Error(`Consumer smoke did not report its temporary workspace:\n${output}`);
+    }
 
     return temporaryRoot;
 };
@@ -243,11 +269,13 @@ const assertDocumentStates = (states, browserName) => {
 
 const chromeVersion = async port => {
     const response = await fetch(`http://127.0.0.1:${port}/json/version`, {signal: AbortSignal.timeout(5_000)});
+
     return response.json();
 };
 
 const chromeTargets = async port => {
     const response = await fetch(`http://127.0.0.1:${port}/json/list`, {signal: AbortSignal.timeout(5_000)});
+
     return response.json();
 };
 
@@ -289,25 +317,32 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
             ],
             {stdio: ["ignore", "ignore", "pipe"]}
         );
+
         process.stderr?.on("data", chunk => (output += chunk));
 
         const version = await waitFor(() => chromeVersion(port), "Chrome DevTools endpoint");
         browser = await RpcClient.connect(version.webSocketDebuggerUrl);
+
         const target = await waitFor(async () => {
             return (await chromeTargets(port)).find(
                 candidate => candidate.type === "page" && candidate.url === siteUrl
             );
         }, "Chrome smoke page");
+
         const attached = await browser.send("Target.attachToTarget", {flatten: true, targetId: target.id});
         const sessionId = attached.sessionId;
 
         await browser.send("Runtime.enable", {}, sessionId);
         await browser.send("Page.enable", {}, sessionId);
+
         await waitFor(async () => {
             return (await evaluateChrome(
                 browser,
                 sessionId,
-                "document.readyState === 'complete' && document.querySelector('iframe')?.contentDocument?.readyState === 'complete'"
+                [
+                    "document.readyState === 'complete'",
+                    "document.querySelector('iframe')?.contentDocument?.readyState === 'complete'",
+                ].join(" && ")
             ))
                 ? true
                 : undefined;
@@ -318,11 +353,13 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
             sessionId,
             "document.documentElement.dataset.adnbnPluginRegCsRuns"
         );
+
         assert(beforeInstall === undefined, "Chrome smoke page was modified before the extension was installed");
 
         // Reproduce manual installation from another tab in the same window.
         const extensionsPage = await browser.send("Target.createTarget", {url: "chrome://extensions/"});
         await browser.send("Target.activateTarget", {targetId: extensionsPage.targetId});
+
         await waitFor(async () => {
             return (await evaluateChrome(browser, sessionId, "document.visibilityState")) === "hidden"
                 ? true
@@ -348,10 +385,12 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
         }, "Chrome plugin activation in top and child documents");
 
         assertDocumentStates(states, "Chrome MV3");
+
         assert(
             (await evaluateChrome(browser, sessionId, "document.visibilityState")) === "hidden",
             "Chrome plugin activation must not select the background tab"
         );
+
         assert(browser.errors.length === 0, `Chrome runtime errors: ${JSON.stringify(browser.errors)}`);
     } catch (error) {
         throw new Error(`${error instanceof Error ? error.message : String(error)}\nChrome output:\n${output}`, {
@@ -364,8 +403,10 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
             } catch {
                 // The browser may close the socket before acknowledging Browser.close.
             }
+
             await browser.close();
         }
+
         await stopProcess(process);
         rmSync(profile, {force: true, recursive: true});
     }
@@ -378,7 +419,9 @@ const firefoxEvaluate = async (browser, context, expression) => {
         target: {context},
     });
 
-    if (response.type === "exception") throw new Error(response.exceptionDetails?.text ?? "Firefox evaluation failed");
+    if (response.type === "exception") {
+        throw new Error(response.exceptionDetails?.text ?? "Firefox evaluation failed");
+    }
 
     return response.result?.value;
 };
@@ -402,12 +445,14 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
             ["--headless", "--no-remote", "--profile", profile, "--remote-debugging-port", String(port), siteUrl],
             {stdio: ["ignore", "ignore", "pipe"]}
         );
+
         process.stderr?.on("data", chunk => (output += chunk));
 
         browser = await waitFor(
             () => RpcClient.connect(`ws://127.0.0.1:${port}/session`, 1_000),
             "Firefox WebDriver BiDi endpoint"
         );
+
         await browser.send("session.new", {capabilities: {alwaysMatch: {acceptInsecureCerts: true}}});
         await browser.send("session.subscribe", {events: ["log.entryAdded"]});
 
@@ -417,7 +462,9 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
             const top = contexts.find(context => context.url === siteUrl);
             const child = contexts.find(context => context.url.endsWith("/child.html"));
 
-            if (!top || !child) return undefined;
+            if (!top || !child) {
+                return undefined;
+            }
 
             const ready = await Promise.all(
                 [top, child].map(context => firefoxEvaluate(browser, context.context, "document.readyState"))
@@ -431,11 +478,13 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
             loadedContexts.top.context,
             "document.documentElement.dataset.adnbnPluginRegCsRuns"
         );
+
         assert(beforeInstall === undefined, "Firefox smoke page was modified before the extension was installed");
 
         const installed = await browser.send("webExtension.install", {
             extensionData: {path: extensionDir, type: "path"},
         });
+
         assert(typeof installed.extension === "string", "Firefox did not return an extension id");
 
         const states = await waitFor(async () => {
@@ -445,9 +494,12 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
                 )
             );
 
-            if (!topValue || !childValue) return undefined;
+            if (!topValue || !childValue) {
+                return undefined;
+            }
 
             const state = {child: JSON.parse(childValue), top: JSON.parse(topValue)};
+
             return state.top.runs && state.child.runs ? state : undefined;
         }, "Firefox plugin activation in top and child documents");
 
@@ -464,8 +516,10 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
             } catch {
                 // Firefox may close the socket while ending the session.
             }
+
             await browser.close();
         }
+
         await stopProcess(process);
         rmSync(profile, {force: true, recursive: true});
     }
@@ -491,9 +545,15 @@ try {
     await runFirefoxSmoke(firefoxExtension, site.url);
 
     console.log(
-        "Verified Chrome MV3 background-tab injection and Firefox MV2 native activation without duplicate top/child execution."
+        "Verified Chrome MV3 background-tab injection and Firefox MV2 native activation " +
+            "without duplicate top/child execution."
     );
 } finally {
-    if (site) await stopSite(site.server);
-    if (temporaryRoot) rmSync(temporaryRoot, {force: true, recursive: true});
+    if (site) {
+        await stopSite(site.server);
+    }
+
+    if (temporaryRoot) {
+        rmSync(temporaryRoot, {force: true, recursive: true});
+    }
 }

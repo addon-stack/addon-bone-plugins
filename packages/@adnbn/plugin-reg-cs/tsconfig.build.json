@@ -7,6 +7,12 @@
     "noEmit": false,
     "outDir": "./dist-types"
   },
-  "include": ["./plugin/**/*.ts"],
-  "exclude": ["./tests", "./dist-types", "./node_modules"]
+  "include": [
+    "./plugin/**/*.ts"
+  ],
+  "exclude": [
+    "./tests",
+    "./dist-types",
+    "./node_modules"
+  ]
 }

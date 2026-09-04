@@ -1,8 +1,15 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["chrome"]
+    "types": [
+      "chrome"
+    ]
   },
-  "include": ["./plugin/**/*.ts"],
-  "exclude": ["./dist-types", "./node_modules"]
+  "include": [
+    "./plugin/**/*.ts"
+  ],
+  "exclude": [
+    "./dist-types",
+    "./node_modules"
+  ]
 }

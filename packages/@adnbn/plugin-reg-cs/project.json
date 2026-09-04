@@ -6,7 +6,9 @@
     "check": {
       "executor": "nx:run-commands",
       "cache": true,
-      "outputs": ["{projectRoot}/dist-types"],
+      "outputs": [
+        "{projectRoot}/dist-types"
+      ],
       "options": {
         "command": "pnpm verify",
         "cwd": "packages/@adnbn/plugin-reg-cs"
@@ -23,7 +25,9 @@
     "pack:check": {
       "executor": "nx:run-commands",
       "cache": true,
-      "dependsOn": ["types"],
+      "dependsOn": [
+        "types"
+      ],
       "options": {
         "command": "pnpm pack:check",
         "cwd": "packages/@adnbn/plugin-reg-cs"
@@ -40,7 +44,9 @@
     "test:coverage": {
       "executor": "nx:run-commands",
       "cache": true,
-      "outputs": ["{projectRoot}/coverage"],
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
       "options": {
         "command": "pnpm test:coverage",
         "cwd": "packages/@adnbn/plugin-reg-cs"
@@ -57,7 +63,9 @@
     "types": {
       "executor": "nx:run-commands",
       "cache": true,
-      "outputs": ["{projectRoot}/dist-types"],
+      "outputs": [
+        "{projectRoot}/dist-types"
+      ],
       "options": {
         "command": "pnpm types",
         "cwd": "packages/@adnbn/plugin-reg-cs"

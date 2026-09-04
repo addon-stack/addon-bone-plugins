@@ -95,6 +95,7 @@ describe("background registration", () => {
 
     it("uses the Firefox build target to skip catch-up even with Chrome API globals", async () => {
         framework.getBrowser.mockReturnValue("firefox");
+
         const harness = setup({
             manifest: createManifestFixture({
                 content_scripts: [{js: ["content.js"], matches: ["https://example.com/*"]}],
@@ -132,14 +133,17 @@ describe("background registration", () => {
         expect(harness.tabs.query.calls.map(call => call.args)).toEqual([
             [{discarded: false, status: "complete", url: ["https://example.com/*"]}],
         ]);
+
         expect(harness.scripting.insertCSS.calls.map(call => call.args)).toEqual([
             [{files: ["content.css"], target: {tabId: 1}}],
             [{files: ["content.css"], target: {tabId: 6}}],
         ]);
+
         expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
             [{files: ["content.js"], target: {tabId: 1}}],
             [{files: ["content.js"], target: {tabId: 6}}],
         ]);
+
         expect(harness.tabs.update.calls).toHaveLength(0);
         expect(harness.tabs.reload.calls).toHaveLength(0);
         expect(harness.tabs.values.find(value => value.id === 1)?.active).toBe(false);
@@ -153,6 +157,7 @@ describe("background registration", () => {
                 content_scripts: [{js: ["content.js"], matches: ["https://example.com/*"]}],
             }),
         });
+
         // The stateful tab collection supplies IDs; override only this malformed-response scenario.
         harness.tabs.query.setResult([tab(1, {id: undefined}), tab(2, {url: undefined})]);
 
@@ -226,6 +231,7 @@ describe("background registration", () => {
             [{origins: ["https://example.com/*"]}],
             [{origins: ["https://example.com/*"]}],
         ]);
+
         expect(
             harness.calls.filter(call => call.api.startsWith("scripting.")).map(call => [call.api, call.args])
         ).toEqual([
@@ -246,28 +252,42 @@ describe("background registration", () => {
             }),
             tabs: [tab(1), tab(2)],
         });
+
         const cssCompletion = Promise.withResolvers<void>();
         const otherTabFinished = Promise.withResolvers<void>();
+
         const insertCssImplementation = ((injection: chrome.scripting.CSSInjection, callback?: () => void) => {
             const result = injection.target.tabId === 1 ? cssCompletion.promise : Promise.resolve();
 
-            if (!callback) return result;
+            if (!callback) {
+                return result;
+            }
+
             void result.then(callback);
         }) as typeof chrome.scripting.insertCSS;
+
         const executeScriptImplementation = ((
             injection: Parameters<typeof chrome.scripting.executeScript>[0],
             callback?: NonNullable<Parameters<typeof chrome.scripting.executeScript>[1]>
         ) => {
-            if (injection.target.tabId === 2) otherTabFinished.resolve();
+            if (injection.target.tabId === 2) {
+                otherTabFinished.resolve();
+            }
+
             const results: never[] = [];
 
-            if (!callback) return Promise.resolve(results);
+            if (!callback) {
+                return Promise.resolve(results);
+            }
+
             callback(results);
         }) as typeof chrome.scripting.executeScript;
+
         harness.scripting.insertCSS.setImplementation(insertCssImplementation);
         harness.scripting.executeScript.setImplementation(executeScriptImplementation);
 
         const dispatch = install(harness);
+
         const timeout = setTimeout(
             () => otherTabFinished.reject(new Error("The independent tab did not finish")),
             1000
@@ -275,12 +295,15 @@ describe("background registration", () => {
 
         try {
             await otherTabFinished.promise;
+
             expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
                 [{files: ["first.js"], target: {tabId: 2}}],
             ]);
+
             expect(harness.permissions.contains.calls).toHaveLength(1);
             cssCompletion.resolve();
             await dispatch;
+
             expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
                 [{files: ["first.js"], target: {tabId: 2}}],
                 [{files: ["first.js"], target: {tabId: 1}}],
@@ -312,9 +335,11 @@ describe("background registration", () => {
         expect(harness.tabs.query.calls.map(call => call.args)).toEqual([
             [{discarded: false, status: "complete", url: ["https://shop.example.com/*"]}],
         ]);
+
         expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
             [{files: ["allowed.js"], target: {tabId: 30}}],
         ]);
+
         expect(harness.permissions.request.calls).toHaveLength(0);
     });
 
@@ -346,6 +371,7 @@ describe("background registration", () => {
             matches: ["https://example.com/*"],
             world: "MAIN",
         };
+
         const harness = setup({
             manifest: createManifestFixture({content_scripts: [contentScript]}),
             tabs: [tab(40)],
@@ -356,9 +382,11 @@ describe("background registration", () => {
         expect(harness.scripting.insertCSS.calls.map(call => call.args)).toEqual([
             [{files: ["content.css"], origin: "USER", target: {allFrames: true, tabId: 40}}],
         ]);
+
         expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
             [{files: ["content.js"], target: {allFrames: true, tabId: 40}, world: "MAIN"}],
         ]);
+
         expect(harness.tabs.insertCSS.calls).toHaveLength(0);
         expect(harness.tabs.executeScript.calls).toHaveLength(0);
     });
@@ -386,13 +414,16 @@ describe("background registration", () => {
             [41, {allFrames: true, file: "a.css", matchAboutBlank: true}],
             [41, {allFrames: true, file: "b.css", matchAboutBlank: true}],
         ]);
+
         expect(harness.tabs.executeScript.calls.map(call => call.args)).toEqual([
             [41, {allFrames: true, file: "a.js", matchAboutBlank: true}],
             [41, {allFrames: true, file: "b.js", matchAboutBlank: true}],
         ]);
+
         expect(
             harness.calls.filter(call => /tabs\.(insertCSS|executeScript)/.test(call.api)).map(call => call.api)
         ).toEqual(["tabs.insertCSS", "tabs.insertCSS", "tabs.executeScript", "tabs.executeScript"]);
+
         expect(harness.scripting.insertCSS.calls).toHaveLength(0);
         expect(harness.scripting.executeScript.calls).toHaveLength(0);
     });
@@ -401,12 +432,14 @@ describe("background registration", () => {
         "isolates a %s injection failure without skipping JS or other tabs",
         async phase => {
             const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
             const harness = setup({
                 manifest: createManifestFixture({
                     content_scripts: [{css: ["content.css"], js: ["content.js"], matches: ["https://example.com/*"]}],
                 }),
                 tabs: [tab(50), tab(51)],
             });
+
             const method = phase === "css" ? harness.scripting.insertCSS : harness.scripting.executeScript;
             method.failNext(new Error(`${phase} failed`));
 
@@ -415,6 +448,7 @@ describe("background registration", () => {
             expect(harness.scripting.insertCSS.calls).toHaveLength(2);
             expect(harness.scripting.executeScript.calls).toHaveLength(2);
             expect(consoleError).toHaveBeenCalledTimes(1);
+
             expect(consoleError).toHaveBeenCalledWith(`[@adnbn/plugin-reg-cs] ${phase} failed`, {
                 declarationIndex: 0,
                 error: expect.any(Error),
@@ -426,6 +460,7 @@ describe("background registration", () => {
 
     it.each(["permission", "query"] as const)("isolates a %s failure from later declarations", async phase => {
         const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+
         const harness = setup({
             manifest: createManifestFixture({
                 content_scripts: [
@@ -435,6 +470,7 @@ describe("background registration", () => {
             }),
             tabs: [tab(60, {url: "https://second.example/page"})],
         });
+
         const method = phase === "permission" ? harness.permissions.contains : harness.tabs.query;
         method.failNext(new Error(`${phase} failed`));
 
@@ -443,7 +479,9 @@ describe("background registration", () => {
         expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
             [{files: ["second.js"], target: {tabId: 60}}],
         ]);
+
         expect(consoleError).toHaveBeenCalledTimes(1);
+
         expect(consoleError).toHaveBeenCalledWith(`[@adnbn/plugin-reg-cs] ${phase} failed`, {
             declarationIndex: 0,
             error: expect.any(Error),

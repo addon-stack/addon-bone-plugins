@@ -1,5 +1,5 @@
-import registerContentScript from "@adnbn/plugin-reg-cs";
 import {defineConfig} from "adnbn";
+import registerContentScript from "@adnbn/plugin-reg-cs";
 
 export default defineConfig({
     name: "Plugin Reg CS Consumer Smoke",

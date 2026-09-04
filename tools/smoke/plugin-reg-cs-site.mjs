@@ -11,7 +11,8 @@ export const startSite = async () => {
             response.end("<!doctype html><html><head><title>Child</title></head><body>child</body></html>");
         } else {
             response.end(
-                '<!doctype html><html><head><title>Top</title></head><body>top<iframe src="/child.html"></iframe></body></html>'
+                "<!doctype html><html><head><title>Top</title></head><body>top" +
+                    '<iframe src="/child.html"></iframe></body></html>'
             );
         }
     });
@@ -23,7 +24,9 @@ export const startSite = async () => {
 
     const address = server.address();
 
-    if (!address || typeof address === "string") throw new Error("Unable to determine browser smoke site port");
+    if (!address || typeof address === "string") {
+        throw new Error("Unable to determine browser smoke site port");
+    }
 
     return {server, url: `http://127.0.0.1:${address.port}/top.html`};
 };
@@ -43,6 +46,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const stop = () => {
         process.off("SIGINT", stop);
         process.off("SIGTERM", stop);
+
         void stopSite(site.server).catch(error => {
             console.error("Unable to stop consumer test server:", error);
             process.exitCode = 1;

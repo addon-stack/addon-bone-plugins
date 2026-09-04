@@ -43,7 +43,9 @@ const run = (command, args, cwd) => {
 const readJson = file => JSON.parse(readFileSync(file, "utf8"));
 
 const assert = (condition, message) => {
-    if (!condition) throw new Error(message);
+    if (!condition) {
+        throw new Error(message);
+    }
 };
 
 const assertIncludes = (values, expected, label) => {
@@ -85,6 +87,7 @@ const inspectBundle = (outputDir, manifest) => {
         backgroundSource.includes("[@adnbn/plugin-reg-cs]"),
         "Background bundle does not contain the structured plugin error marker"
     );
+
     assert(
         !backgroundSource.includes("__ADNBN_PLUGIN_REG_CS_OPTIONS__"),
         "Background bundle contains the unresolved build-time options expression"
@@ -94,7 +97,9 @@ const inspectBundle = (outputDir, manifest) => {
 const buildAndInspect = ({browser, manifestVersion}) => {
     const args = ["node_modules/adnbn/bin/adnbn.js", "build", ".", "-a", "smoke", "-b", browser];
 
-    if (manifestVersion === 2) args.push("--mv2");
+    if (manifestVersion === 2) {
+        args.push("--mv2");
+    }
 
     run("node", args, consumerDir);
     run("pnpm", ["exec", "tsc", "--noEmit"], consumerDir);
@@ -156,20 +161,24 @@ try {
     const installedPackage = readJson(path.join(installedPackageDir, "package.json"));
 
     assert(installedPackage.exports?.["."]?.default === "./plugin/index.ts", "Root export must keep raw TypeScript");
+
     assert(
         installedPackage.exports?.["./background"]?.types === "./dist-types/background.d.ts",
         "Background export must expose generated declarations"
     );
+
     assert(
         existsSync(path.join(installedPackageDir, "plugin/background.ts")),
         "Packed plugin is missing raw TypeScript"
     );
+
     assert(
         existsSync(path.join(installedPackageDir, "dist-types/background.d.ts")),
         "Packed plugin is missing declarations"
     );
 
     const runtimeJavaScript = collectFiles(installedPackageDir).filter(file => /\.(?:c|m)?js$/.test(file));
+
     assert(
         runtimeJavaScript.length === 0,
         `Packed plugin contains runtime JavaScript: ${runtimeJavaScript.join(", ")}`
