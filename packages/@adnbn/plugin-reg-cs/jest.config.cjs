@@ -22,7 +22,12 @@ module.exports = {
             },
         ],
     },
-    transformIgnorePatterns: ["/node_modules/(?!\\.pnpm/webext-patterns@|webext-patterns/)"],
+    moduleNameMapper: {
+        "^@addon-core/storage$": "<rootDir>/node_modules/@addon-core/storage/dist/index.js",
+    },
+    transformIgnorePatterns: [
+        "/node_modules/(?!\\.pnpm/(?:@addon-core\\+storage@|webext-patterns@)|@addon-core/storage|webext-patterns/)",
+    ],
     collectCoverageFrom: ["plugin/**/*.ts"],
     coverageDirectory: "coverage",
     coverageReporters: ["text", "json-summary", "lcov"],

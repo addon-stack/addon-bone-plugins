@@ -77,6 +77,9 @@ importers:
       '@addon-core/inject-script':
         specifier: ^0.5.0
         version: 0.5.0
+      '@addon-core/storage':
+        specifier: ^0.7.0
+        version: 0.7.0(@types/chrome@0.2.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       webext-patterns:
         specifier: ^3.0.0
         version: 3.0.0

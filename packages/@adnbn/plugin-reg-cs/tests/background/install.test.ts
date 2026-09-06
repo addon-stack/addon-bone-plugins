@@ -7,19 +7,17 @@ jest.mock("adnbn", () => ({
 
 import type {BrowserHarness, BrowserHarnessOptions} from "@addon-core/browser/testing";
 import {
-    createBrowserHarness,
-    createInjectionResultFixture,
     createInstalledDetailsFixture,
     createManifestFixture,
     createTabFixture,
-    installBrowserGlobals,
 } from "@addon-core/browser/testing";
 
-import background from "../plugin/background";
+import background from "../../plugin/background";
+import {setupBrowserHarness} from "../helpers/browser";
 
 interface BackgroundDefinition {
-    main(): Promise<void>;
-    permissions: string[];
+    main(): void;
+    permissions?: string[];
 }
 
 const definition = background as unknown as BackgroundDefinition;
@@ -27,16 +25,10 @@ const framework = jest.requireMock<{getBrowser: jest.Mock}>("adnbn");
 let restoreGlobals: (() => void) | undefined;
 
 const setup = (options: BrowserHarnessOptions = {}): BrowserHarness => {
-    const harness = createBrowserHarness({permissions: {origins: ["<all_urls>"]}, ...options});
-    restoreGlobals = installBrowserGlobals(harness, {context: "serviceWorker", profile: "chrome"});
+    const context = setupBrowserHarness(options);
+    restoreGlobals = context.restore;
 
-    // Model successful native calls, not execution of CSS/JS in a real document.
-    harness.scripting.insertCSS.setResult(undefined);
-    harness.scripting.executeScript.setResult([createInjectionResultFixture()]);
-    harness.tabs.insertCSS.setResult(undefined);
-    harness.tabs.executeScript.setResult([]);
-
-    return harness;
+    return context.browser;
 };
 
 const tab = (id: number, overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab => {
@@ -47,7 +39,7 @@ const install = async (
     harness: BrowserHarness,
     reason: chrome.runtime.InstalledDetails["reason"] = "install"
 ): Promise<void> => {
-    await definition.main();
+    definition.main();
     await harness.runtime.events.onInstalled.emit(createInstalledDetailsFixture({reason}));
 };
 
@@ -61,8 +53,8 @@ afterEach(() => {
 });
 
 describe("background registration", () => {
-    it("declares only the APIs required for immediate injection", () => {
-        expect(definition.permissions).toEqual(["tabs", "scripting"]);
+    it("does not declare permissions in the background entrypoint", () => {
+        expect(definition.permissions).toBeUndefined();
         expect(definition.main).toEqual(expect.any(Function));
     });
 
@@ -76,7 +68,7 @@ describe("background registration", () => {
 
         await install(harness, reason);
 
-        expect(harness.runtime.getManifest.calls).toHaveLength(0);
+        expect(harness.runtime.getManifest.calls).toHaveLength(1);
         expect(harness.permissions.contains.calls).toHaveLength(0);
         expect(harness.tabs.query.calls).toHaveLength(0);
         expect(harness.scripting.executeScript.calls).toHaveLength(0);
@@ -239,6 +231,52 @@ describe("background registration", () => {
             ["scripting.executeScript", [{files: ["first-a.js", "first-b.js"], target: {tabId: 20}}]],
             ["scripting.insertCSS", [{files: ["second.css"], target: {tabId: 20}}]],
             ["scripting.executeScript", [{files: ["second.js"], target: {tabId: 20}}]],
+        ]);
+    });
+
+    it("keeps later declarations pending when a tab thaws during the install scan", async () => {
+        const frozenTab = tab(21, {frozen: true});
+        const unfrozenTab = tab(21, {frozen: false});
+
+        const harness = setup({
+            manifest: createManifestFixture({
+                content_scripts: [
+                    {js: ["first.js"], matches: ["https://example.com/*"]},
+                    {js: ["second.js"], matches: ["https://example.com/*"]},
+                ],
+            }),
+            tabs: [frozenTab],
+        });
+
+        let queryCount = 0;
+
+        const queryImplementation = ((
+            _queryInfo: chrome.tabs.QueryInfo,
+            callback?: (tabs: chrome.tabs.Tab[]) => void
+        ) => {
+            queryCount += 1;
+            const result = queryCount === 1 ? [frozenTab] : [unfrozenTab];
+
+            if (queryCount === 2) {
+                harness.tabs.set([unfrozenTab]);
+            }
+
+            if (callback) {
+                callback(result);
+
+                return;
+            }
+
+            return Promise.resolve(result);
+        }) as typeof chrome.tabs.query;
+
+        harness.tabs.query.setImplementation(queryImplementation);
+
+        await install(harness);
+
+        expect(harness.scripting.executeScript.calls.map(call => call.args)).toEqual([
+            [{files: ["first.js"], target: {tabId: 21}}],
+            [{files: ["second.js"], target: {tabId: 21}}],
         ]);
     });
 
@@ -449,12 +487,18 @@ describe("background registration", () => {
             expect(harness.scripting.executeScript.calls).toHaveLength(2);
             expect(consoleError).toHaveBeenCalledTimes(1);
 
-            expect(consoleError).toHaveBeenCalledWith(`[@adnbn/plugin-reg-cs] ${phase} failed`, {
-                declarationIndex: 0,
-                error: expect.any(Error),
-                tabId: 50,
-                title: "Tab 50",
-            });
+            const [message, error] = consoleError.mock.calls[0];
+
+            expect(message).toEqual(
+                expect.stringMatching(
+                    new RegExp(
+                        `^\\[@adnbn/plugin-reg-cs\\] ${phase} failed: .+; declarationIndex=0; tabId=50; title="Tab 50"$`
+                    )
+                )
+            );
+
+            expect(message).not.toContain("[object Object]");
+            expect(error).toEqual(expect.any(Error));
         }
     );
 

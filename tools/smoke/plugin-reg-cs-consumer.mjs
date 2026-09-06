@@ -112,18 +112,19 @@ const buildAndInspect = ({browser, manifestVersion}) => {
     const manifest = readJson(manifestPath);
 
     assert(manifest.manifest_version === manifestVersion, `${browser} manifest version is not ${manifestVersion}`);
-    assertIncludes(manifest.permissions, "tabs", `${browser} permissions`);
-    assert(!(manifest.permissions ?? []).includes("storage"), `${browser} must not require storage`);
+    assert(!(manifest.permissions ?? []).includes("tabs"), `${browser} must not require tabs`);
     assert(!(manifest.permissions ?? []).includes("webNavigation"), `${browser} must not require webNavigation`);
 
     if (manifestVersion === 3) {
         assert(typeof manifest.background?.service_worker === "string", "Chrome MV3 must use a service worker");
+        assertIncludes(manifest.permissions, "storage", "Chrome MV3 permissions");
         assertIncludes(manifest.permissions, "scripting", "Chrome MV3 permissions");
         assertIncludes(manifest.host_permissions, "http://127.0.0.1/*", "Chrome MV3 host permissions");
     } else {
-        assert(Array.isArray(manifest.background?.scripts), "Firefox MV2 must use background scripts");
-        assertIncludes(manifest.permissions, "http://127.0.0.1/*", "Firefox MV2 permissions");
-        assert(!(manifest.permissions ?? []).includes("scripting"), "Firefox MV2 must not declare scripting");
+        assert(Array.isArray(manifest.background?.scripts), `${browser} MV2 must use background scripts`);
+        assertIncludes(manifest.permissions, "http://127.0.0.1/*", `${browser} MV2 permissions`);
+        assert(!(manifest.permissions ?? []).includes("storage"), `${browser} MV2 must not declare storage`);
+        assert(!(manifest.permissions ?? []).includes("scripting"), `${browser} MV2 must not declare scripting`);
     }
 
     inspectBundle(outputDir, manifest);
@@ -163,17 +164,22 @@ try {
     assert(installedPackage.exports?.["."]?.default === "./plugin/index.ts", "Root export must keep raw TypeScript");
 
     assert(
-        installedPackage.exports?.["./background"]?.types === "./dist-types/background.d.ts",
+        installedPackage.exports?.["./background"]?.types === "./dist-types/background/index.d.ts",
         "Background export must expose generated declarations"
     );
 
     assert(
-        existsSync(path.join(installedPackageDir, "plugin/background.ts")),
+        installedPackage.exports?.["./background"]?.default === "./plugin/background/index.ts",
+        "Background export must keep raw TypeScript"
+    );
+
+    assert(
+        existsSync(path.join(installedPackageDir, "plugin/background/index.ts")),
         "Packed plugin is missing raw TypeScript"
     );
 
     assert(
-        existsSync(path.join(installedPackageDir, "dist-types/background.d.ts")),
+        existsSync(path.join(installedPackageDir, "dist-types/background/index.d.ts")),
         "Packed plugin is missing declarations"
     );
 
@@ -186,10 +192,13 @@ try {
 
     const buildDirectories = [
         buildAndInspect({browser: "chrome", manifestVersion: 3}),
+        buildAndInspect({browser: "chrome", manifestVersion: 2}),
         buildAndInspect({browser: "firefox", manifestVersion: 2}),
     ];
 
-    console.log(`Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome MV3 and Firefox MV2 builds.`);
+    console.log(
+        "Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome MV3/MV2 and Firefox MV2 builds."
+    );
 
     if (process.argv.includes("--keep-output")) {
         for (const buildDirectory of buildDirectories) {

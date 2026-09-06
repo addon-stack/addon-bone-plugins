@@ -45,12 +45,12 @@ const files = new Set((metadata.files ?? []).map(file => file.path.replace(/^pac
 const requiredFiles = [
     "LICENSE.md",
     "README.md",
-    "dist-types/background.d.ts",
-    "dist-types/background.d.ts.map",
+    "dist-types/background/index.d.ts",
+    "dist-types/background/index.d.ts.map",
     "dist-types/index.d.ts",
     "dist-types/index.d.ts.map",
     "package.json",
-    "plugin/background.ts",
+    "plugin/background/index.ts",
     "plugin/index.ts",
 ];
 
@@ -71,6 +71,22 @@ const missingDeclarations = rawTypeScriptFiles.flatMap(file => {
 
 if (missingDeclarations.length > 0) {
     throw new Error(`Packed package is missing declarations for raw TypeScript: ${missingDeclarations.join(", ")}`);
+}
+
+const expectedDeclarationFiles = new Set(
+    rawTypeScriptFiles.flatMap(file => {
+        const declaration = file.replace(/^plugin\//, "dist-types/").replace(/\.ts$/, ".d.ts");
+
+        return [declaration, `${declaration}.map`];
+    })
+);
+
+const unexpectedDeclarations = [...files].filter(
+    file => file.startsWith("dist-types/") && !expectedDeclarationFiles.has(file)
+);
+
+if (unexpectedDeclarations.length > 0) {
+    throw new Error(`Packed package contains stale declarations: ${unexpectedDeclarations.join(", ")}`);
 }
 
 const forbiddenFiles = [...files].filter(

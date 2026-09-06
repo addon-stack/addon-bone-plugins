@@ -45,8 +45,8 @@
       "default": "./plugin/index.ts"
     },
     "./background": {
-      "types": "./dist-types/background.d.ts",
-      "default": "./plugin/background.ts"
+      "types": "./dist-types/background/index.d.ts",
+      "default": "./plugin/background/index.ts"
     }
   },
   "scripts": {
@@ -59,13 +59,14 @@
     "test:coverage": "jest --config jest.config.cjs --coverage --runInBand",
     "test:watch": "jest --config jest.config.cjs --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "types": "tsc -p tsconfig.build.json",
+    "types": "node -e \"require('node:fs').rmSync('dist-types', {force: true, recursive: true})\" && tsc -p tsconfig.build.json",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
     "@addon-core/browser": "^0.8.0",
     "@addon-core/inject-css": "^0.4.0",
     "@addon-core/inject-script": "^0.5.0",
+    "@addon-core/storage": "^0.7.0",
     "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
