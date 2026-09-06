@@ -75,7 +75,11 @@ jobs:
           install: false
 
       - name: Install Trusted Publishing-compatible npm
-        run: npm install --global npm@11.19.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global --prefix "$RUNNER_TEMP/npm-cli" npm@11.19.1
+          echo "$RUNNER_TEMP/npm-cli/bin" >> "$GITHUB_PATH"
 
       - name: Verify publish toolchain
         shell: bash
@@ -83,8 +87,11 @@ jobs:
           set -euo pipefail
           pnpm --version
           node --version
+          npm_path="$(command -v npm)"
           npm_version="$(npm --version)"
+          echo "npm path: $npm_path"
           echo "npm $npm_version"
+          test "$npm_path" = "$RUNNER_TEMP/npm-cli/bin/npm"
           node -e 'const [major = 0, minor = 0, patch = 0] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) process.exit(1)' "$npm_version"
 
       - name: Install dependencies
