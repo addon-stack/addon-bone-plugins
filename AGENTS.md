@@ -52,6 +52,20 @@
 - Preserve imported release tags: they are version baselines, not disposable migration artifacts.
 - Use Conventional Commit scopes from `commitlint.config.mjs` and add a new full package name there when scope expands.
 
+## Permission design
+
+- Follow least privilege for every plugin. Add only permissions required by the plugin's currently enabled behavior;
+  never request permissions for likely consumer needs, future features, or merely because an API namespace is used.
+- Reuse consumer-owned host access or API permissions when they already provide the required capability. Verify the
+  exact browser and manifest-version contract before adding a broader permission.
+- Compute automatically added permissions at the manifest-build boundary for each browser and manifest version. Do not
+  emit a permission on targets where the corresponding runtime path is disabled or handled natively by the browser.
+- When a permission is needed only by an optional feature or a useful permission-free fallback exists, expose a
+  build-time plugin option that controls both the feature and its permission. Disabling the feature must remove its
+  runtime path and permission; permissions required by the plugin's core behavior may remain automatic.
+- Test the generated permission matrix across supported targets. Where removing a broader permission depends on host
+  access or browser behavior, retain a real-browser smoke test rather than relying only on unit mocks.
+
 ## Package documentation
 
 - Keep the workspace README presentation-focused and link every available package to its package directory.

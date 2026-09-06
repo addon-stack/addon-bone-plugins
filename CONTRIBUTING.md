@@ -90,8 +90,9 @@ Open the printed `http://127.0.0.1:<port>/top.html` URL before installing the ex
 `output/plugin-reg-cs/smoke-firefox-mv2/manifest.json` as a temporary Firefox add-on.
 
 For every install-time test, remove the extension, reload the page while the extension is absent, and install it again.
-Using the extension's Reload button does not reproduce a fresh installation. The page may remain in a background tab,
-but discarded and frozen tabs are intentionally skipped.
+Using the extension's Reload button does not reproduce a fresh installation. The page may remain in a background tab.
+Discarded tabs use the browser's normal reload behavior; frozen Chrome MV3 tabs are queued and processed after the
+browser unfreezes them.
 
 The local server uses Node.js and needs no additional package. Press `Ctrl+C` to stop it. Generated manual builds live
 under the ignored `output/` directory; CI uses temporary directories and does not update this local output.
