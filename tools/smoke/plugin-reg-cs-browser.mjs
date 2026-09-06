@@ -293,6 +293,26 @@ const evaluateChrome = async (browser, sessionId, expression) => {
     return result.result?.value;
 };
 
+const readChromeDocumentStates = async (browser, sessionId) => {
+    return evaluateChrome(
+        browser,
+        sessionId,
+        `(() => {
+            const child = document.querySelector('iframe')?.contentDocument;
+            if (!child) return undefined;
+            const states = {top: ${stateExpression}(document), child: ${stateExpression}(child)};
+            return states.top.runs && states.child.runs ? states : undefined;
+        })()`
+    );
+};
+
+const pendingTabsExpression = `
+    new Promise(resolve => chrome.storage.session.get(
+        "@adnbn/plugin-reg-cs:tabs",
+        values => resolve(values["@adnbn/plugin-reg-cs:tabs"]),
+    ))
+`;
+
 const runChromeSmoke = async (extensionDir, siteUrl) => {
     assert(chromeBinary, "Chrome is not installed; set ADNBN_CHROME_BIN to run the MV3 runtime smoke");
 
@@ -356,6 +376,34 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
 
         assert(beforeInstall === undefined, "Chrome smoke page was modified before the extension was installed");
 
+        const frozenUrl = `${siteUrl}?frozen=1`;
+        const frozenTarget = await browser.send("Target.createTarget", {background: true, url: frozenUrl});
+
+        const frozenAttached = await browser.send("Target.attachToTarget", {
+            flatten: true,
+            targetId: frozenTarget.targetId,
+        });
+
+        const frozenSessionId = frozenAttached.sessionId;
+
+        await browser.send("Runtime.enable", {}, frozenSessionId);
+        await browser.send("Page.enable", {}, frozenSessionId);
+
+        await waitFor(async () => {
+            return (await evaluateChrome(
+                browser,
+                frozenSessionId,
+                [
+                    "document.readyState === 'complete'",
+                    "document.querySelector('iframe')?.contentDocument?.readyState === 'complete'",
+                ].join(" && ")
+            ))
+                ? true
+                : undefined;
+        }, "Chrome frozen page and iframe load");
+
+        await browser.send("Page.setWebLifecycleState", {state: "frozen"}, frozenSessionId);
+
         // Reproduce manual installation from another tab in the same window.
         const extensionsPage = await browser.send("Target.createTarget", {url: "chrome://extensions/"});
         await browser.send("Target.activateTarget", {targetId: extensionsPage.targetId});
@@ -369,22 +417,86 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
         const installed = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
         assert(typeof installed.id === "string", "Chrome did not return an extension id");
 
-        const states = await waitFor(async () => {
-            const value = await evaluateChrome(
-                browser,
-                sessionId,
-                `(() => {
-                    const child = document.querySelector('iframe')?.contentDocument;
-                    if (!child) return undefined;
-                    const states = {top: ${stateExpression}(document), child: ${stateExpression}(child)};
-                    return states.top.runs && states.child.runs ? states : undefined;
-                })()`
-            );
-
-            return value;
-        }, "Chrome plugin activation in top and child documents");
+        const states = await waitFor(
+            () => readChromeDocumentStates(browser, sessionId),
+            "Chrome plugin activation in top and child documents"
+        );
 
         assertDocumentStates(states, "Chrome MV3");
+
+        const workerTarget = await waitFor(async () => {
+            return (await chromeTargets(port)).find(
+                candidate =>
+                    candidate.type === "service_worker" &&
+                    candidate.url.startsWith(`chrome-extension://${installed.id}/`)
+            );
+        }, "Chrome extension service worker");
+
+        const workerAttached = await browser.send("Target.attachToTarget", {
+            flatten: true,
+            targetId: workerTarget.id,
+        });
+
+        await browser.send("Runtime.enable", {}, workerAttached.sessionId);
+
+        const pendingTabs = await waitFor(async () => {
+            const value = await evaluateChrome(browser, workerAttached.sessionId, pendingTabsExpression);
+
+            return Object.keys(value ?? {}).length > 0 ? value : undefined;
+        }, "Chrome frozen tab to enter session storage");
+
+        const pendingEntries = Object.values(pendingTabs);
+
+        assert(pendingEntries.length === 1, `Chrome stored ${pendingEntries.length} pending tabs instead of one`);
+        assert(pendingEntries[0].url === frozenUrl, "Chrome stored the wrong frozen-tab URL");
+
+        assert(
+            JSON.stringify(pendingEntries[0].scripts) === "[0]",
+            `Chrome stored the wrong content-script indexes: ${JSON.stringify(pendingEntries[0].scripts)}`
+        );
+
+        await browser.send("ServiceWorker.enable", {}, sessionId);
+        await browser.send("ServiceWorker.stopAllWorkers", {}, sessionId);
+
+        await waitFor(async () => {
+            const hasWorker = (await chromeTargets(port)).some(
+                candidate =>
+                    candidate.type === "service_worker" &&
+                    candidate.url.startsWith(`chrome-extension://${installed.id}/`)
+            );
+
+            return hasWorker ? undefined : true;
+        }, "Chrome extension service worker to stop");
+
+        await browser.send("Target.activateTarget", {targetId: frozenTarget.targetId});
+
+        const restartedWorkerTarget = await waitFor(async () => {
+            return (await chromeTargets(port)).find(
+                candidate =>
+                    candidate.type === "service_worker" &&
+                    candidate.url.startsWith(`chrome-extension://${installed.id}/`)
+            );
+        }, "Chrome extension service worker to restart");
+
+        const restartedWorkerAttached = await browser.send("Target.attachToTarget", {
+            flatten: true,
+            targetId: restartedWorkerTarget.id,
+        });
+
+        await browser.send("Runtime.enable", {}, restartedWorkerAttached.sessionId);
+
+        const resumedStates = await waitFor(
+            () => readChromeDocumentStates(browser, frozenSessionId),
+            "Chrome deferred injection after tab activation"
+        );
+
+        assertDocumentStates(resumedStates, "Chrome MV3 resumed frozen tab");
+
+        await waitFor(async () => {
+            const value = await evaluateChrome(browser, restartedWorkerAttached.sessionId, pendingTabsExpression);
+
+            return value === undefined ? true : undefined;
+        }, "Chrome frozen-tab queue to clear");
 
         assert(
             (await evaluateChrome(browser, sessionId, "document.visibilityState")) === "hidden",
@@ -545,7 +657,7 @@ try {
     await runFirefoxSmoke(firefoxExtension, site.url);
 
     console.log(
-        "Verified Chrome MV3 background-tab injection and Firefox MV2 native activation " +
+        "Verified Chrome MV3 background and frozen-tab injection plus Firefox MV2 native activation " +
             "without duplicate top/child execution."
     );
 } finally {

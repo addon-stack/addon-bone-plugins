@@ -1,3 +1,105 @@
 :root {
     --adnbn-plugin-reg-cs-smoke: ready;
+    background: #ecfdf5;
+    color: #13332a;
+    font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+    box-sizing: border-box;
+    display: grid;
+    min-height: 100vh;
+    margin: 0;
+    padding: 56px 24px 24px;
+    place-items: center;
+    background:
+        radial-gradient(circle at top left, rgb(52 211 153 / 28%), transparent 36%),
+        linear-gradient(145deg, #ecfdf5, #f0fdfa 55%, #eff6ff);
+}
+
+body::before {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    right: 0;
+    left: 0;
+    padding: 10px 16px;
+    background: #047857;
+    color: #fff;
+    content: "CSS injected successfully";
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.smoke-card {
+    box-sizing: border-box;
+    width: min(680px, 100%);
+    padding: 28px;
+    border: 1px solid rgb(5 150 105 / 24%);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 90%);
+    box-shadow: 0 24px 64px rgb(6 78 59 / 14%);
+}
+
+.smoke-eyebrow {
+    margin: 0 0 8px;
+    color: #047857;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.smoke-heading {
+    margin: 0;
+    font-size: clamp(26px, 5vw, 42px);
+    line-height: 1.08;
+}
+
+.smoke-status {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 650;
+}
+
+.smoke-meta {
+    margin: 12px 0 0;
+    color: #4b635c;
+    font-size: 13px;
+}
+
+iframe {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 250px;
+    margin-top: 24px;
+    border: 2px solid #6ee7b7;
+    border-radius: 14px;
+    background: #fff;
+}
+
+:root[data-adnbn-plugin-reg-cs-state="duplicate"] {
+    background: #fff1f2;
+    color: #4c0519;
+}
+
+:root[data-adnbn-plugin-reg-cs-state="duplicate"] body {
+    background: #fff1f2;
+}
+
+:root[data-adnbn-plugin-reg-cs-state="duplicate"] body::before {
+    background: #be123c;
+    content: "Duplicate injection detected";
+}
+
+:root[data-adnbn-plugin-reg-cs-state="duplicate"] .smoke-status {
+    background: #ffe4e6;
+    color: #9f1239;
 }

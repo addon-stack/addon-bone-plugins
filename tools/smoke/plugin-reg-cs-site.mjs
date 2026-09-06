@@ -1,6 +1,24 @@
 import {createServer} from "node:http";
 import {pathToFileURL} from "node:url";
 
+const smokeDocument = (frame, child = "") => `<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plugin Reg CS Smoke — ${frame}</title>
+</head>
+<body>
+    <main class="smoke-card">
+        <p class="smoke-eyebrow">Plugin Reg CS · ${frame} frame</p>
+        <h1 class="smoke-heading" data-smoke-heading>Waiting for content script</h1>
+        <p class="smoke-status" data-smoke-status>JavaScript has not run yet.</p>
+        <p class="smoke-meta">The page will turn green when CSS loads. JavaScript will update the status above.</p>
+        ${child}
+    </main>
+</body>
+</html>`;
+
 export const startSite = async () => {
     const server = createServer((request, response) => {
         const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
@@ -8,11 +26,10 @@ export const startSite = async () => {
         response.writeHead(200, {"Content-Type": "text/html; charset=utf-8"});
 
         if (pathname === "/child.html") {
-            response.end("<!doctype html><html><head><title>Child</title></head><body>child</body></html>");
+            response.end(smokeDocument("child"));
         } else {
             response.end(
-                "<!doctype html><html><head><title>Top</title></head><body>top" +
-                    '<iframe src="/child.html"></iframe></body></html>'
+                smokeDocument("top", '<iframe title="Child frame injection target" src="/child.html"></iframe>')
             );
         }
     });
@@ -39,7 +56,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
     console.log(`Consumer test page: ${site.url}`);
     console.log("Open this page before installing the extension; it can stay in a background tab in the same window.");
-    console.log("Discarded and frozen tabs are skipped. Reinstall the extension for each install-time test.");
+    console.log("Frozen Chrome MV3 tabs are queued until thawed; discarded tabs use normal reload behavior.");
+    console.log("Reinstall the extension for each install-time test.");
     console.log("The page contains a child frame. This command does not build or install the extension.");
     console.log("Press Ctrl+C to stop the server.");
 
