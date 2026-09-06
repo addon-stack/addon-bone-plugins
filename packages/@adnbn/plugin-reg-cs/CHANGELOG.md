@@ -1,3 +1,18 @@
+## 0.6.0 (2026-09-06)
+
+### 🚀 Features
+
+- **@adnbn/plugin-reg-cs:** catch up frozen install tabs ([44e5df6](https://github.com/addon-stack/addon-bone-plugins/commit/44e5df6))
+- **@adnbn/plugin-reg-cs:** stabilize install-time content script activation ([490cad9](https://github.com/addon-stack/addon-bone-plugins/commit/490cad9))
+
+### 🩹 Fixes
+
+- **@adnbn/plugin-reg-cs:** migrate package to monorepo ([9a1890e](https://github.com/addon-stack/addon-bone-plugins/commit/9a1890e))
+
+### ❤️ Thank You
+
+- Anjey Tsibylskij @atldays
+
 # Changelog
 
 ## 🚀 Release `@adnbn/plugin-reg-cs` v0.5.1 (2025-10-22)
