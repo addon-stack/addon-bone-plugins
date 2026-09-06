@@ -95,6 +95,7 @@ const inspectBundle = (outputDir, manifest) => {
 };
 
 const buildAndInspect = ({browser, manifestVersion}) => {
+    const target = `${browser} MV${manifestVersion}`;
     const args = ["node_modules/adnbn/bin/adnbn.js", "build", ".", "-a", "smoke", "-b", browser];
 
     if (manifestVersion === 2) {
@@ -111,20 +112,24 @@ const buildAndInspect = ({browser, manifestVersion}) => {
 
     const manifest = readJson(manifestPath);
 
-    assert(manifest.manifest_version === manifestVersion, `${browser} manifest version is not ${manifestVersion}`);
-    assert(!(manifest.permissions ?? []).includes("tabs"), `${browser} must not require tabs`);
-    assert(!(manifest.permissions ?? []).includes("webNavigation"), `${browser} must not require webNavigation`);
+    assert(manifest.manifest_version === manifestVersion, `${target} manifest version is not ${manifestVersion}`);
+    assert(!(manifest.permissions ?? []).includes("tabs"), `${target} must not require tabs`);
+    assert(!(manifest.permissions ?? []).includes("webNavigation"), `${target} must not require webNavigation`);
 
-    if (manifestVersion === 3) {
+    if (browser === "chrome" && manifestVersion === 3) {
         assert(typeof manifest.background?.service_worker === "string", "Chrome MV3 must use a service worker");
         assertIncludes(manifest.permissions, "storage", "Chrome MV3 permissions");
         assertIncludes(manifest.permissions, "scripting", "Chrome MV3 permissions");
-        assertIncludes(manifest.host_permissions, "http://127.0.0.1/*", "Chrome MV3 host permissions");
     } else {
-        assert(Array.isArray(manifest.background?.scripts), `${browser} MV2 must use background scripts`);
-        assertIncludes(manifest.permissions, "http://127.0.0.1/*", `${browser} MV2 permissions`);
-        assert(!(manifest.permissions ?? []).includes("storage"), `${browser} MV2 must not declare storage`);
-        assert(!(manifest.permissions ?? []).includes("scripting"), `${browser} MV2 must not declare scripting`);
+        assert(Array.isArray(manifest.background?.scripts), `${target} must use background scripts`);
+        assert(!(manifest.permissions ?? []).includes("storage"), `${target} must not declare storage`);
+        assert(!(manifest.permissions ?? []).includes("scripting"), `${target} must not declare scripting`);
+    }
+
+    if (manifestVersion === 3) {
+        assertIncludes(manifest.host_permissions, "http://127.0.0.1/*", `${target} host permissions`);
+    } else {
+        assertIncludes(manifest.permissions, "http://127.0.0.1/*", `${target} permissions`);
     }
 
     inspectBundle(outputDir, manifest);
@@ -193,11 +198,12 @@ try {
     const buildDirectories = [
         buildAndInspect({browser: "chrome", manifestVersion: 3}),
         buildAndInspect({browser: "chrome", manifestVersion: 2}),
+        buildAndInspect({browser: "firefox", manifestVersion: 3}),
         buildAndInspect({browser: "firefox", manifestVersion: 2}),
     ];
 
     console.log(
-        "Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome MV3/MV2 and Firefox MV2 builds."
+        "Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome and Firefox MV3/MV2 builds."
     );
 
     if (process.argv.includes("--keep-output")) {

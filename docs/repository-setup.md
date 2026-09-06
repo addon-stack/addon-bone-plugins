@@ -61,6 +61,6 @@ following from the remote systems:
 - the App created and pushed the release commit and scoped tag;
 - the GitHub Release was created from the same tag;
 - npm shows the expected version, raw TypeScript files, declarations, and provenance;
-- a clean external Addon Bone project can install the published version and build Chrome MV3 and Firefox MV2.
+- a clean external Addon Bone project can install the published version and build Chrome and Firefox MV3/MV2.
 
 Local tests and dry-runs do not prove GitHub App permissions, branch rules, npm OIDC, or registry publication.

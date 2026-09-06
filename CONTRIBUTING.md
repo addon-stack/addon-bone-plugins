@@ -73,8 +73,9 @@ The checks cover separate boundaries:
 - TypeScript checks source and tests, then emits public declarations.
 - Jest validates package behavior and repository tooling.
 - The package check verifies that npm tarballs contain raw TypeScript and declarations only.
-- The consumer smoke installs a fresh tarball and builds Chrome MV3 and Firefox MV2 extensions with Addon Bone.
-- The browser smoke loads those builds in real browsers and verifies CSS-before-JavaScript execution.
+- The consumer smoke installs a fresh tarball and builds Chrome and Firefox MV3/MV2 extensions with Addon Bone.
+- The browser smoke loads Chrome MV3 and Firefox MV2 builds in real browsers and verifies CSS-before-JavaScript
+  execution.
 
 ## Manual browser testing
 
@@ -87,7 +88,8 @@ pnpm serve:consumer
 
 Open the printed `http://127.0.0.1:<port>/top.html` URL before installing the extension. Load
 `output/plugin-reg-cs/smoke-chrome-mv3` as an unpacked Chrome extension or
-`output/plugin-reg-cs/smoke-firefox-mv2/manifest.json` as a temporary Firefox add-on.
+`output/plugin-reg-cs/smoke-firefox-mv3/manifest.json` as a temporary Firefox add-on. MV2 variants are available in
+the corresponding `smoke-chrome-mv2` and `smoke-firefox-mv2` directories.
 
 For every install-time test, remove the extension, reload the page while the extension is absent, and install it again.
 Using the extension's Reload button does not reproduce a fresh installation. The page may remain in a background tab.
