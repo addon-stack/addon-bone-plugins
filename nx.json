@@ -15,7 +15,8 @@
       "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/eslint.config.mjs",
       "{workspaceRoot}/tools/eslint/**/*",
-      "{workspaceRoot}/tools/pack/**/*"
+      "{workspaceRoot}/tools/pack/**/*",
+      "{workspaceRoot}/tests/helpers/**/*"
     ]
   },
   "targetDefaults": {
@@ -39,7 +40,7 @@
         "refactor": {
           "semverBump": "none",
           "changelog": {
-            "title": "💅 Refactors",
+            "title": "\ud83d\udc85 Refactors",
             "hidden": false
           }
         }

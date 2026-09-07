@@ -1,0 +1,29 @@
+{
+  "name": "plugin-remote-config-consumer-smoke",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@adnbn/plugin-remote-config": "workspace:*",
+    "@types/chrome": "0.2.7",
+    "adnbn": "0.10.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@rspack/core": "1.7.12",
+    "scheduler": "0.27.0"
+  },
+  "devDependencies": {
+    "css-loader": "7.1.5",
+    "sass": "1.103.1",
+    "sass-loader": "16.0.8",
+    "source-modifier-loader": "1.0.2",
+    "typescript": "5.9.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/node": "^24.0.0"
+  }
+}

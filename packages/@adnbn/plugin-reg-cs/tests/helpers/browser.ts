@@ -5,7 +5,7 @@ import {
     installBrowserGlobals,
 } from "@addon-core/browser/testing";
 
-import {createStorageHarness, installStorageHarness, type StorageHarness} from "./storage";
+import {createStorageHarness, installStorageHarness, type StorageHarness} from "../../../../../tests/helpers/storage";
 
 export interface PluginBrowserHarness {
     readonly browser: BrowserHarness;
