@@ -53,8 +53,8 @@
       "default": "./plugin/hooks.ts"
     },
     "./service": {
-      "types": "./dist-types/service.d.ts",
-      "default": "./plugin/service.ts"
+      "types": "./dist-types/service/index.d.ts",
+      "default": "./plugin/service/index.ts"
     }
   },
   "scripts": {

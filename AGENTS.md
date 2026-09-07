@@ -50,8 +50,9 @@
 - A successful JSON object is shallowly merged with defaults only. Do not merge successful responses with previous
   remote values or introduce deep merging. Empty objects and explicit falsy values are valid responses.
 - Failed refreshes retain the last working response for the same URL. TTL controls freshness, not cache usability.
-- New configuration, URL, success time, and retry metadata use one ordinary `storage.local` record at `remote-config`.
-  Encrypted storage is used only to read historical records during migration; never create new encrypted records.
+- New configuration, URL, success time, and retry metadata use one ordinary `storage.local` record with namespace
+  `@adnbn/plugin-remote-config` and key `cache`.
+  This is an intentional breaking change: use no secure-storage APIs and do not add legacy cache migration paths.
 - Keep network and storage failures independent, share concurrent refreshes, and bound requests and retry frequency.
 - Keep the four public exports and declaration-merging contract. Addon Bone owns compilation and service transport.
 

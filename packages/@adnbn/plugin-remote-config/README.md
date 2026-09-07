@@ -51,7 +51,8 @@ access for the resolved HTTP(S) configuration endpoint. It adds no `tabs`, `scri
 ### `storage`
 
 The service saves the remote JSON response, its source URL, last successful update time, and retry deadline in
-`storage.local`, under `remote-config`. Data is not encrypted or synchronized. The saved response is merged with the
+`storage.local`, with namespace `@adnbn/plugin-remote-config` and key `cache`. The native storage key is
+`@adnbn/plugin-remote-config:cache`. Data is not encrypted or synchronized. The saved response is merged with the
 current build's defaults when read. One storage write updates the accepted response and its metadata together.
 
 Suggested store justification:
@@ -165,9 +166,9 @@ available from `/api` to read build-time options. `/service` remains the backgro
   working storage, a successful request, or defaults.
 - Retry deadlines are persisted on a best-effort basis. Storage failures or manual cache clearing can allow another
   attempt after a service restart.
-- Updating from older versions reads the historical encrypted cache once and moves it to ordinary local storage.
-  A previous `isOrigin: false` does not discard the saved configuration. The encrypted key is removed only after the
-  ordinary local record has been saved; no new encrypted records are created.
+- **Breaking storage change:** older encrypted and non-namespaced caches are not read or migrated. When upgrading
+  from those versions, defaults are used until the first successful remote request. Only the ordinary namespaced
+  `cache` record is used.
 - Standalone source checking uses a development-only service registry declaration. Consumers receive their real
   service registry from Addon Bone; the development declaration is excluded from the npm tarball.
 

@@ -121,8 +121,8 @@ const runChrome = async (extensionDir, siteUrl) => {
             const direct = await evaluateChrome(rpc, attachedWorker.sessionId, "remoteConfigSmokeRead()");
             equal(direct, expectedRemote, "Direct background service call");
             const values = await evaluateChrome(rpc, attachedWorker.sessionId, "chrome.storage.local.get(null)");
-            equal(values["remote-config"].config, expectedRemote, "Plain local cache");
-            assert(!values["secure:remote-config"], "A new installation must not create an encrypted cache");
+            equal(Object.keys(values), ["@adnbn/plugin-remote-config:cache"], "Only one namespaced local record");
+            equal(values["@adnbn/plugin-remote-config:cache"].config, expectedRemote, "Plain local cache");
             await rpc.send("Target.detachFromTarget", {sessionId: attachedWorker.sessionId});
         };
 

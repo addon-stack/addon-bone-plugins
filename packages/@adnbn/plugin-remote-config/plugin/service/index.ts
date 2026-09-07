@@ -1,19 +1,19 @@
 import {defineService} from "adnbn";
 
-import {getRemoteConfigOptions} from "./api";
-import type {CacheRecord} from "./cache";
-import {readCache, writeCache} from "./cache";
-import {isConfig} from "./options";
-import type {RemoteConfig, RemoteConfigOptions} from "./types";
+import {getRemoteConfigOptions} from "../api";
+import {isConfig} from "../options";
+import type {RemoteConfig, RemoteConfigOptions} from "../types";
+import Cache from "./Cache";
 
 class RemoteConfigService {
     private pending?: Promise<RemoteConfig>;
-    private record?: CacheRecord;
-    private loaded = false;
-    private readable = false;
-    private retryAt = 0;
+    private readonly cache?: Cache;
 
-    constructor(private readonly options: RemoteConfigOptions) {}
+    constructor(private readonly options: RemoteConfigOptions) {
+        if (options.url) {
+            this.cache = new Cache(options.url, options.ttl, options.retryDelay ?? 60_000);
+        }
+    }
 
     /**
      * Preserve the public type reference in Addon Bone's generated service registry.
@@ -29,74 +29,36 @@ class RemoteConfigService {
     }
 
     private current(): RemoteConfig {
-        return {...this.options.config, ...this.record?.config};
+        return {...this.options.config, ...this.cache?.config};
     }
 
     private async load(): Promise<RemoteConfig> {
-        const {url, ttl} = this.options;
+        const cache = this.cache;
 
-        if (!url) {
+        if (!cache) {
             return this.options.config;
         }
 
-        if (!this.loaded) {
-            this.loaded = true;
+        await cache.load();
 
-            try {
-                this.record = await readCache(url);
-                this.readable = true;
-                const retryAt = this.record?.retryAt ?? 0;
-                const latestRetry = Date.now() + (this.options.retryDelay ?? 60_000);
-                this.retryAt = retryAt <= latestRetry ? retryAt : 0;
-            } catch (error) {
-                console.error("[@adnbn/plugin-remote-config] cache read failed", error);
-            }
-        }
-
-        const now = Date.now();
-        const updatedAt = this.record?.updatedAt;
-
-        const fresh = this.record?.config && updatedAt !== undefined && updatedAt <= now &&
-            now - updatedAt < ttl * 60_000;
-
-        if (fresh || now < this.retryAt) {
+        if (!cache.shouldRefresh()) {
             return this.current();
         }
 
         let config: RemoteConfig;
 
         try {
-            config = await this.fetch(url);
+            config = await this.fetch(cache.url);
         } catch (error) {
             console.error("[@adnbn/plugin-remote-config] refresh failed", error);
-            this.retryAt = Date.now() + (this.options.retryDelay ?? 60_000);
-
-            if (this.readable) {
-                this.record = {...this.record, url, retryAt: this.retryAt};
-                await this.persist();
-            }
+            await cache.deferRetry();
 
             return this.current();
         }
 
-        this.retryAt = 0;
-        this.record = {url, config, updatedAt: Date.now()};
-        await this.persist();
+        await cache.update(config);
 
         return this.current();
-    }
-
-    private async persist(): Promise<void> {
-        if (!this.record) {
-            return;
-        }
-
-        try {
-            await writeCache(this.record);
-            this.readable = true;
-        } catch (error) {
-            console.error("[@adnbn/plugin-remote-config] cache write failed", error);
-        }
     }
 
     private async fetch(url: string): Promise<RemoteConfig> {

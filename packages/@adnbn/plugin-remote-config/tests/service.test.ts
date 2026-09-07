@@ -1,8 +1,6 @@
 jest.mock("adnbn", () => ({defineService: (definition: unknown) => definition}));
 jest.mock("../plugin/api", () => ({getRemoteConfigOptions: jest.fn()}));
 
-import {storageSecure} from "@addon-core/storage";
-
 import {getRemoteConfigOptions} from "../plugin/api";
 import {normalizeOptions} from "../plugin/options";
 import definition from "../plugin/service";
@@ -10,6 +8,7 @@ import type {RemoteConfigOptions} from "../plugin/types";
 import {setupBrowserHarness} from "./helpers/browser";
 
 const url = "https://config.example/config.json";
+const cacheKey = "@adnbn/plugin-remote-config:cache";
 const defaults = {flag: false, endpoint: "default", nested: {a: 1, b: 2}};
 const remote = {flag: true, endpoint: "remote", nested: {a: 10, b: 20}};
 
@@ -28,10 +27,10 @@ const service = (options: Partial<RemoteConfigOptions> = {}) => {
 };
 
 const seed = async (record: Record<string, unknown>) => {
-    await harness.storage.api.local.set({"remote-config": record});
+    await harness.storage.api.local.set({[cacheKey]: record});
 };
 
-const stored = () => harness.storage.local.values()["remote-config"];
+const stored = () => harness.storage.local.values()[cacheKey];
 
 beforeEach(() => {
     harness = setupBrowserHarness();
@@ -83,6 +82,28 @@ it("uses a fresh cache and refreshes at the TTL boundary", async () => {
     now++;
     await instance.get();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it("loads ordinary storage once per service instance and keeps subsequent reads in memory", async () => {
+    await seed({url, config: remote, updatedAt: now});
+    const read = jest.spyOn(harness.storage.api.local, "get");
+    const instance = service();
+    await expect(instance.get()).resolves.toEqual(remote);
+    await expect(instance.get()).resolves.toEqual(remote);
+    expect(read).toHaveBeenCalledTimes(1);
+    await expect(service().get()).resolves.toEqual(remote);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it("keeps in-memory cache state independent between service instances", async () => {
+    const first = service();
+    await expect(first.get()).resolves.toEqual(remote);
+    const other = {flag: false, endpoint: "other", nested: {a: 3}};
+    fetchMock.mockResolvedValue(response(other));
+    await expect(service({url: "https://other.example/config.json"}).get()).resolves.toEqual(other);
+    await expect(first.get()).resolves.toEqual(remote);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
 it.each(["offline", "http", "json", "array", "null", "string", "number", "boolean"])(
@@ -166,11 +187,11 @@ it("returns and retains successful data in memory when persistence fails", async
     await expect(instance.get()).resolves.toEqual(remote);
 });
 
-it("stores the accepted payload, URL and success time in one native write", async () => {
+it("stores the accepted payload, URL and success time in one namespaced native write", async () => {
     const write = jest.spyOn(harness.storage.api.local, "set");
     await service().get();
     expect(write).toHaveBeenCalledTimes(1);
-    expect(write.mock.calls[0][0]).toEqual({"remote-config": {url, config: remote, updatedAt: now}});
+    expect(write.mock.calls[0][0]).toEqual({[cacheKey]: {url, config: remote, updatedAt: now}});
 });
 
 it("does not allow direct callers to mutate the cached config or defaults", async () => {
@@ -188,18 +209,32 @@ it.each([undefined, "broken", Date.parse("2030-01-01T00:00:00Z")])(
     }
 );
 
-it("recovers a legacy encrypted cache even when isOrigin was cleared by a previous error", async () => {
-    await seed({isOrigin: false, updatedAt: new Date(now - 120_000).toISOString()});
-    await storageSecure<{"remote-config": unknown}>({area: "local"}).set("remote-config", {url, config: remote});
-    fetchMock.mockRejectedValue(new Error("offline"));
-    await expect(service({ttl: 1}).get()).resolves.toEqual(remote);
-    expect(stored()).toMatchObject({url, config: remote, updatedAt: now - 120_000});
-    expect(harness.storage.local.values()).not.toHaveProperty("secure:remote-config");
-});
+it.each([true, false])("ignores records outside its namespace when network success is %s", async success => {
+    const record = {url, config: remote, updatedAt: now};
 
-it("fetches a replacement when a legacy encrypted record cannot be decoded", async () => {
-    await harness.storage.api.local.set({"secure:remote-config": "corrupted"});
-    await expect(service().get()).resolves.toEqual(remote);
+    const unrelated = {
+        "remote-config": record,
+        cache: record,
+        "another-plugin:cache": record,
+        "secure:remote-config": "old ciphertext",
+        "secure::remote-config": "old ciphertext",
+    };
+
+    await harness.storage.api.local.set(unrelated);
+
+    const read = jest.spyOn(harness.storage.api.local, "get");
+    const remove = jest.spyOn(harness.storage.api.local, "remove");
+
+    if (!success) {
+        fetchMock.mockRejectedValue(new Error("offline"));
+    }
+
+    await expect(service().get()).resolves.toEqual(success ? remote : defaults);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(read.mock.calls[0][0]).toBe(cacheKey);
+    expect(remove).not.toHaveBeenCalled();
+    expect(harness.storage.local.values()).toMatchObject(unrelated);
 });
 
 it("times out a stalled JSON body, releases waiting callers and ignores late completion", async () => {
