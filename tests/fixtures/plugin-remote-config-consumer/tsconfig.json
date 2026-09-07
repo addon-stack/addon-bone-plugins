@@ -18,6 +18,7 @@
     "adnbn.config.ts",
     "src/**/*.ts",
     "declaration.d.ts",
+    "types.ts",
     ".adnbn/**/*.d.ts"
   ]
 }

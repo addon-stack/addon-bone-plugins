@@ -103,6 +103,14 @@ const buildAndInspect = ({browser, manifestVersion}) => {
     assert(background.includes("[@adnbn/plugin-remote-config]"), "Service runtime is missing");
     assert(!background.includes("__REMOTE_CONFIG_OPTIONS__"), "Build-time options were not replaced");
 
+    if (process.argv.includes("--keep-output")) {
+        const declarationsDir = path.join(repoRoot, "output/plugin-remote-config/types");
+        mkdirSync(declarationsDir, {recursive: true});
+        const destination = path.join(declarationsDir, `${browser}-mv${manifestVersion}.d.ts`);
+        cpSync(path.join(consumerDir, ".adnbn/service.d.ts"), destination);
+        console.log(`Generated service declaration: ${destination}`);
+    }
+
     return outputDir;
 };
 
@@ -162,7 +170,8 @@ try {
     ];
 
     console.log(
-        "Verified packed @adnbn/plugin-remote-config with Addon Bone 0.10.0 in Chrome and Firefox MV3/MV2 builds."
+        "Verified packed @adnbn/plugin-remote-config builds and generated service types with Addon Bone 0.10.0 " +
+        "in Chrome and Firefox MV3/MV2."
     );
 
     if (process.argv.includes("--keep-output")) {

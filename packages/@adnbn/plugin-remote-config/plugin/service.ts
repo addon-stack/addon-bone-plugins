@@ -15,6 +15,10 @@ class RemoteConfigService {
 
     constructor(private readonly options: RemoteConfigOptions) {}
 
+    /**
+     * Preserve the public type reference in Addon Bone's generated service registry.
+     * @returns {Promise<import('@adnbn/plugin-remote-config').RemoteConfig>}
+     */
     public get(): Promise<RemoteConfig> {
         this.pending ??= this.load().finally(() => {
             this.pending = undefined;
