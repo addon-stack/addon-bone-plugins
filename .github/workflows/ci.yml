@@ -102,7 +102,7 @@ jobs:
             echo "No usable base commit; validating only HEAD (initial/import push)."
             git log -1 --format=%B "$to" | pnpm exec commitlint --verbose
           else
-            pnpm exec commitlint --from "$from" --to "$to" --verbose
+            node tools/commits/check.mjs "$from" "$to"
           fi
 
       - name: Verify workspace

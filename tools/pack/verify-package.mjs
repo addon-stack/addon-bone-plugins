@@ -42,16 +42,14 @@ const packResult = parsePackOutput(pack.stdout.trim());
 const metadata = Array.isArray(packResult) ? packResult[0] : packResult;
 const files = new Set((metadata.files ?? []).map(file => file.path.replace(/^package\//, "").replace(/^\.\//, "")));
 
+const exportsEntries = Object.values(packageJson.exports ?? {});
+
 const requiredFiles = [
     "LICENSE.md",
     "README.md",
-    "dist-types/background/index.d.ts",
-    "dist-types/background/index.d.ts.map",
-    "dist-types/index.d.ts",
-    "dist-types/index.d.ts.map",
     "package.json",
-    "plugin/background/index.ts",
-    "plugin/index.ts",
+    ...exportsEntries.flatMap(entry => [entry.default, entry.types, `${entry.types}.map`])
+        .map(file => file?.replace(/^\.\//, "")),
 ];
 
 const missingFiles = requiredFiles.filter(file => !files.has(file));
@@ -103,8 +101,6 @@ const forbiddenFiles = [...files].filter(
 if (forbiddenFiles.length > 0) {
     throw new Error(`Packed package contains forbidden files: ${forbiddenFiles.join(", ")}`);
 }
-
-const exportsEntries = Object.values(packageJson.exports ?? {});
 
 for (const entry of exportsEntries) {
     if (!entry.default?.endsWith(".ts")) {

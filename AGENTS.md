@@ -2,8 +2,8 @@
 
 ## Current scope
 
-- The only migrated package is `@adnbn/plugin-reg-cs`.
-- Do not scaffold or migrate another plugin unless the user explicitly expands the pilot scope.
+- Migrated packages are `@adnbn/plugin-reg-cs` and `@adnbn/plugin-remote-config`.
+- Do not scaffold or migrate another plugin unless the user explicitly expands this scope.
 - Preserve public package names, exports, peer contracts, and observable runtime behavior during infrastructure work.
 
 ## Raw TypeScript contract
@@ -34,9 +34,9 @@
 - Do not introduce Vite or Vitest. The Addon Bone runtime and Rspack consumer pipeline are the integration boundary.
 - `@adnbn/plugin-reg-cs` reads the native built-manifest content-script contract and delegates URL pattern and glob
   matching to `webext-patterns`; do not add a second normalized content-script model or a hand-written matcher.
-- Install catch-up processes all matching complete, non-discarded, non-frozen tabs, whether active or in the background.
-  Do not activate, reload, or unfreeze tabs for injection. Do not add persistence, permission waiting, background-tab
-  listeners, or deferred activation without an explicit opt-in product decision.
+- Install catch-up processes matching complete, non-discarded tabs, whether active or in the background. Chromium MV3
+  keeps frozen tabs in `storage.session` and rechecks them after unfreezing. MV2 only performs immediate catch-up.
+  Do not activate, reload, or unfreeze tabs for injection. Keep the authorized pending queue session-scoped.
 - Firefox performs install-time catch-up natively; exclude the plugin background entrypoint from Firefox builds with
   its static `excludeBrowser` option to avoid duplicate execution and unnecessary runtime code. Do not infer the
   target browser at runtime.

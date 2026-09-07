@@ -79,7 +79,7 @@ importers:
         version: 0.5.0
       '@addon-core/storage':
         specifier: ^0.7.0
-        version: 0.7.0(@types/chrome@0.2.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       webext-patterns:
         specifier: ^3.0.0
         version: 3.0.0
@@ -89,7 +89,50 @@ importers:
         version: 0.2.7
       adnbn:
         specifier: ^0.10.0
-        version: 0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
+        version: 0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
+
+  packages/@adnbn/plugin-remote-config:
+    dependencies:
+      '@addon-core/browser':
+        specifier: ^0.8.0
+        version: 0.8.0
+      '@addon-core/storage':
+        specifier: ^0.7.0
+        version: 0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@rspack/core':
+        specifier: ^1.7.5 || ^2.0.0
+        version: 2.2.1(@swc/helpers@0.5.23)
+      await-lock:
+        specifier: ^3.0.0
+        version: 3.0.0
+      date-fns:
+        specifier: ^2.25.0
+        version: 2.30.0
+      is-url:
+        specifier: ^1.2.4
+        version: 1.2.4
+      react:
+        specifier: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+        version: 19.2.5
+      react-dom:
+        specifier: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@types/chrome':
+        specifier: ^0.2.2
+        version: 0.2.7
+      '@types/is-url':
+        specifier: ^1.2.32
+        version: 1.2.32
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.7(@types/react@19.2.18)
+      adnbn:
+        specifier: ^0.10.0
+        version: 0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
 
   tests/fixtures/plugin-reg-cs-consumer:
     dependencies:
@@ -101,7 +144,7 @@ importers:
         version: 0.2.7
       adnbn:
         specifier: 0.10.0
-        version: 0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
+        version: 0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -2002,6 +2045,9 @@ packages:
   '@types/http-proxy@1.17.17':
     resolution: {integrity: sha512-ED6LB+Z1AVylNTu7hdzuBqOgMnvG/ld6wGCG8wFnAzKX5uyW2K3WD52v0gnLCTK/VLpXtKckgWuyScYK6cSPaw==}
 
+  '@types/is-url@1.2.32':
+    resolution: {integrity: sha512-46VLdbWI8Sc+hPexQ6NLNR2YpoDyDZIpASHkJQ2Yr+Kf9Giw6LdCTkwOdsnHKPQeh7xTjTmSnxbE8qpxYuCiHA==}
+
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -2037,6 +2083,14 @@ packages:
 
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
+
+  '@types/react-dom@19.2.7':
+    resolution: {integrity: sha512-I8bPpDLcHBv1qiIiXDCy71Rt8eQDKJP0sMSWJphDdAcdqiJ1sGpZamavoEIRZmYzjia9LuEb2HlYdDpmoENpvQ==}
+    peerDependencies:
+      '@types/react': ^19.2.0
+
+  '@types/react@19.2.18':
+    resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
 
   '@types/retry@0.12.2':
     resolution: {integrity: sha512-XISRgDJ2Tc5q4TRqvgJtzsRkFYNJzZrhTdtMoGVBttwzzQJkPnS3WWTFc7kuDRoPtPakl+T+OfdEUjYJj7Jbow==}
@@ -2849,6 +2903,13 @@ packages:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  date-fns@2.30.0:
+    resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
+    engines: {node: '>=0.11'}
+
   debounce@1.2.1:
     resolution: {integrity: sha512-XRRe6Glud4rd/ZGQfiV1ruXSfbvfJedlV9Y6zOlP+2K04vBYiJEte6stfFkCP03aMnY5tsipamumUjL14fofug==}
 
@@ -3646,6 +3707,9 @@ packages:
   is-unicode-supported@0.1.0:
     resolution: {integrity: sha512-knxG2q4UC3u8stRGyAVJCOdxFmv5DZiRcdlIaAQXAbSfJya+OhopNotLQrstBhququ4ZpuKbDc/8S6mgXgPFPw==}
     engines: {node: '>=10'}
+
+  is-url@1.2.4:
+    resolution: {integrity: sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==}
 
   is-wsl@3.1.0:
     resolution: {integrity: sha512-UcVfVfaK4Sc4m7X3dUSoHoozQGBEFeDC+zVo06t98xe8CzHSZZBekNXH+tu0NalHolcJ/QAGqS46Hef7QXBIMw==}
@@ -5152,21 +5216,27 @@ snapshots:
     dependencies:
       '@addon-core/browser': 0.7.2
 
-  '@addon-core/storage@0.7.0(@types/chrome@0.2.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
+  '@addon-core/storage@0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)':
     dependencies:
       '@addon-core/browser': 0.5.0(@types/chrome@0.2.7)
       '@types/chrome': 0.2.7
       dequal: 2.0.3
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
+    optionalDependencies:
+      '@types/react': 19.2.18
+      '@types/react-dom': 19.2.7(@types/react@19.2.18)
 
-  '@addon-core/storage@0.7.0(@types/chrome@0.2.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@addon-core/storage@0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@addon-core/browser': 0.5.0(@types/chrome@0.2.7)
       '@types/chrome': 0.2.7
       dequal: 2.0.3
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+    optionalDependencies:
+      '@types/react': 19.2.18
+      '@types/react-dom': 19.2.7(@types/react@19.2.18)
 
   '@babel/code-frame@7.26.2':
     dependencies:
@@ -7663,7 +7733,6 @@ snapshots:
       '@rspack/binding-win32-arm64-msvc': 2.2.1
       '@rspack/binding-win32-ia32-msvc': 2.2.1
       '@rspack/binding-win32-x64-msvc': 2.2.1
-    optional: true
 
   '@rspack/cli@1.7.12(@rspack/core@1.7.12(@swc/helpers@0.5.23))(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))':
     dependencies:
@@ -7694,7 +7763,6 @@ snapshots:
       '@rspack/binding': 2.2.1
     optionalDependencies:
       '@swc/helpers': 0.5.23
-    optional: true
 
   '@rspack/dev-server@1.1.5(@rspack/core@1.7.12(@swc/helpers@0.5.23))(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))':
     dependencies:
@@ -8051,6 +8119,8 @@ snapshots:
     dependencies:
       '@types/node': 22.20.1
 
+  '@types/is-url@1.2.32': {}
+
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -8087,6 +8157,14 @@ snapshots:
   '@types/qs@6.15.1': {}
 
   '@types/range-parser@1.2.7': {}
+
+  '@types/react-dom@19.2.7(@types/react@19.2.18)':
+    dependencies:
+      '@types/react': 19.2.18
+
+  '@types/react@19.2.18':
+    dependencies:
+      csstype: 3.2.3
 
   '@types/retry@0.12.2': {}
 
@@ -8401,11 +8479,11 @@ snapshots:
 
   address@2.0.3: {}
 
-  adnbn@0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26)):
+  adnbn@0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26)):
     dependencies:
       '@addon-core/browser': 0.7.2
       '@addon-core/inject-script': 0.5.0
-      '@addon-core/storage': 0.7.0(@types/chrome@0.2.7)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@addon-core/storage': 0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@rsdoctor/rspack-plugin': 1.6.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
       '@rspack/cli': 1.7.12(@rspack/core@1.7.12(@swc/helpers@0.5.23))(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
       '@rspack/core': 1.7.12(@swc/helpers@0.5.23)
@@ -8442,6 +8520,8 @@ snapshots:
       zod: 3.25.76
     optionalDependencies:
       '@esbuild/darwin-arm64': 0.20.2
+      '@types/react': 19.2.18
+      '@types/react-dom': 19.2.7(@types/react@19.2.18)
     transitivePeerDependencies:
       - '@emnapi/core'
       - '@emnapi/runtime'
@@ -8459,11 +8539,11 @@ snapshots:
       - webpack
       - webpack-cli
 
-  adnbn@0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26)):
+  adnbn@0.10.0(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.2.7)(@types/express@4.17.25)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(debug@4.4.3(supports-color@8.1.1))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26)):
     dependencies:
       '@addon-core/browser': 0.7.2
       '@addon-core/inject-script': 0.5.0
-      '@addon-core/storage': 0.7.0(@types/chrome@0.2.7)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@addon-core/storage': 0.7.0(@types/chrome@0.2.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@rsdoctor/rspack-plugin': 1.6.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
       '@rspack/cli': 1.7.12(@rspack/core@1.7.12(@swc/helpers@0.5.23))(@types/express@4.17.25)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.1(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.26))
       '@rspack/core': 1.7.12(@swc/helpers@0.5.23)
@@ -8500,6 +8580,8 @@ snapshots:
       zod: 3.25.76
     optionalDependencies:
       '@esbuild/darwin-arm64': 0.20.2
+      '@types/react': 19.2.18
+      '@types/react-dom': 19.2.7(@types/react@19.2.18)
     transitivePeerDependencies:
       - '@emnapi/core'
       - '@emnapi/runtime'
@@ -9092,6 +9174,12 @@ snapshots:
   csso@5.0.5:
     dependencies:
       css-tree: 2.2.1
+
+  csstype@3.2.3: {}
+
+  date-fns@2.30.0:
+    dependencies:
+      '@babel/runtime': 7.29.7
 
   debounce@1.2.1: {}
 
@@ -9856,6 +9944,8 @@ snapshots:
   is-stream@2.0.1: {}
 
   is-unicode-supported@0.1.0: {}
+
+  is-url@1.2.4: {}
 
   is-wsl@3.1.0:
     dependencies:
