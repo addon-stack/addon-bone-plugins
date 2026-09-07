@@ -1,4 +1,4 @@
-import {Browser, defineBackground, getBrowser} from "adnbn";
+import {Browser, defineBackground} from "adnbn";
 
 import {isManifestVersion3, onInstalled, onTabRemoved, onTabReplaced, onTabUpdated} from "@addon-core/browser";
 
@@ -6,11 +6,8 @@ import {installContentScripts} from "./install";
 import {PendingTabs} from "./PendingTabs";
 
 export default defineBackground({
+    excludeBrowser: [Browser.Firefox],
     main: () => {
-        if (getBrowser() === Browser.Firefox) {
-            return;
-        }
-
         const installSafely = async (pending?: PendingTabs): Promise<void> => {
             try {
                 await installContentScripts(pending);

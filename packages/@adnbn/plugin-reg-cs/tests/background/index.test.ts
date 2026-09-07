@@ -1,7 +1,6 @@
 jest.mock("adnbn", () => ({
     Browser: {Firefox: "firefox"},
     defineBackground: (definition: unknown) => definition,
-    getBrowser: jest.fn(),
 }));
 
 import type {BrowserHarness, BrowserHarnessOptions} from "@addon-core/browser/testing";
@@ -16,12 +15,12 @@ import {PendingTabs} from "../../plugin/background/PendingTabs";
 import {setupBrowserHarness} from "../helpers/browser";
 
 interface BackgroundDefinition {
+    excludeBrowser?: string[];
     main(): void;
     permissions?: string[];
 }
 
 const definition = background as unknown as BackgroundDefinition;
-const framework = jest.requireMock<{getBrowser: jest.Mock}>("adnbn");
 let restoreGlobals: VoidFunction | undefined;
 
 const tab = (id: number, overrides: Partial<chrome.tabs.Tab> = {}): chrome.tabs.Tab => {
@@ -39,17 +38,14 @@ const flush = async (): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 0));
 };
 
-beforeEach(() => {
-    framework.getBrowser.mockReset().mockReturnValue("chromium");
-});
-
 afterEach(() => {
     restoreGlobals?.();
     restoreGlobals = undefined;
 });
 
 describe("background listeners", () => {
-    it("does not declare permissions in the background entrypoint", () => {
+    it("excludes Firefox without declaring permissions in the background entrypoint", () => {
+        expect(definition.excludeBrowser).toEqual(["firefox"]);
         expect(definition.permissions).toBeUndefined();
     });
 
@@ -221,15 +217,5 @@ describe("background listeners", () => {
         expect(consoleError).toHaveBeenCalledWith("[@adnbn/plugin-reg-cs] storage failed", {
             error: expect.any(Error),
         });
-    });
-
-    it("registers no runtime listeners for Firefox", () => {
-        framework.getBrowser.mockReturnValue("firefox");
-        const harness = setup();
-
-        definition.main();
-
-        expect(harness.runtime.events.onInstalled.listenerCount()).toBe(0);
-        expect(harness.tabs.events.onUpdated.listenerCount()).toBe(0);
     });
 });

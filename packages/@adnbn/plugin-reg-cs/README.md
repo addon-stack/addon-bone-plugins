@@ -105,8 +105,8 @@ Declarations run in manifest order. Eligible tabs within one declaration run ind
 not stop the others. Within one tab, the complete CSS file list is awaited before the complete JavaScript file list is
 attempted. A CSS failure is logged but does not prevent the JavaScript attempt.
 
-Firefox already catches up declarative content scripts during installation. The plugin uses Addon Bone's synchronous
-build target and exits on Firefox to avoid duplicate execution.
+Firefox already catches up declarative content scripts during installation. The plugin's background entrypoint is
+excluded from Firefox builds to avoid duplicate execution and unnecessary runtime code.
 
 ## Behavior and limits
 

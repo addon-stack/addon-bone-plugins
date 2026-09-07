@@ -2,7 +2,6 @@
 jest.mock("adnbn", () => ({
     Browser: {Firefox: "firefox"},
     defineBackground: (definition: unknown) => definition,
-    getBrowser: jest.fn(),
 }));
 
 import type {BrowserHarness, BrowserHarnessOptions} from "@addon-core/browser/testing";
@@ -16,12 +15,12 @@ import background from "../../plugin/background";
 import {setupBrowserHarness} from "../helpers/browser";
 
 interface BackgroundDefinition {
+    excludeBrowser?: string[];
     main(): void;
     permissions?: string[];
 }
 
 const definition = background as unknown as BackgroundDefinition;
-const framework = jest.requireMock<{getBrowser: jest.Mock}>("adnbn");
 let restoreGlobals: (() => void) | undefined;
 
 const setup = (options: BrowserHarnessOptions = {}): BrowserHarness => {
@@ -43,17 +42,14 @@ const install = async (
     await harness.runtime.events.onInstalled.emit(createInstalledDetailsFixture({reason}));
 };
 
-beforeEach(() => {
-    framework.getBrowser.mockReset().mockReturnValue("chromium");
-});
-
 afterEach(() => {
     restoreGlobals?.();
     restoreGlobals = undefined;
 });
 
 describe("background registration", () => {
-    it("does not declare permissions in the background entrypoint", () => {
+    it("excludes Firefox without declaring permissions in the background entrypoint", () => {
+        expect(definition.excludeBrowser).toEqual(["firefox"]);
         expect(definition.permissions).toBeUndefined();
         expect(definition.main).toEqual(expect.any(Function));
     });
@@ -82,25 +78,6 @@ describe("background registration", () => {
         expect(harness.permissions.contains.calls).toHaveLength(0);
         expect(harness.tabs.query.calls).toHaveLength(0);
         expect(harness.scripting.insertCSS.calls).toHaveLength(0);
-        expect(harness.scripting.executeScript.calls).toHaveLength(0);
-    });
-
-    it("uses the Firefox build target to skip catch-up even with Chrome API globals", async () => {
-        framework.getBrowser.mockReturnValue("firefox");
-
-        const harness = setup({
-            manifest: createManifestFixture({
-                content_scripts: [{js: ["content.js"], matches: ["https://example.com/*"]}],
-            }),
-            tabs: [tab(1)],
-        });
-
-        await install(harness);
-
-        expect(framework.getBrowser).toHaveBeenCalledTimes(1);
-        expect(harness.runtime.getManifest.calls).toHaveLength(0);
-        expect(harness.permissions.contains.calls).toHaveLength(0);
-        expect(harness.tabs.query.calls).toHaveLength(0);
         expect(harness.scripting.executeScript.calls).toHaveLength(0);
     });
 

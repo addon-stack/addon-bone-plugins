@@ -37,8 +37,9 @@
 - Install catch-up processes all matching complete, non-discarded, non-frozen tabs, whether active or in the background.
   Do not activate, reload, or unfreeze tabs for injection. Do not add persistence, permission waiting, background-tab
   listeners, or deferred activation without an explicit opt-in product decision.
-- Firefox performs install-time catch-up natively; use Addon Bone's synchronous `getBrowser()` build target and keep
-  the explicit Firefox early return to avoid duplicate execution. Do not infer the target browser at runtime.
+- Firefox performs install-time catch-up natively; exclude the plugin background entrypoint from Firefox builds with
+  its static `excludeBrowser` option to avoid duplicate execution and unnecessary runtime code. Do not infer the
+  target browser at runtime.
 - Process declarations in manifest order. Within a tab, await the whole CSS array before attempting the whole JavaScript
   array; parallelism and `Promise.allSettled` are limited to independent eligible tabs in one declaration.
 

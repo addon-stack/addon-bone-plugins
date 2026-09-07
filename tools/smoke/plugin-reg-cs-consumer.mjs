@@ -74,10 +74,26 @@ const shouldCopyFixtureEntry = source => {
     return !ignoredFixtureEntries.has(topLevelEntry);
 };
 
-const inspectBundle = (outputDir, manifest) => {
+const inspectBundle = (outputDir, manifest, expectPluginBackground) => {
     const backgroundFiles = [manifest.background?.service_worker, ...(manifest.background?.scripts ?? [])].filter(
         Boolean
     );
+
+    if (!expectPluginBackground) {
+        assert(backgroundFiles.length === 0, `Unexpected background bundle found in ${outputDir}`);
+
+        const javascript = collectFiles(outputDir)
+            .filter(file => /\.(?:c|m)?js$/.test(file))
+            .map(file => readFileSync(file, "utf8"))
+            .join("\n");
+
+        assert(
+            !javascript.includes("[@adnbn/plugin-reg-cs]"),
+            "Firefox output contains the excluded plugin background"
+        );
+
+        return;
+    }
 
     assert(backgroundFiles.length > 0, `No background bundle found in ${outputDir}`);
 
@@ -116,7 +132,11 @@ const buildAndInspect = ({browser, manifestVersion}) => {
     assert(!(manifest.permissions ?? []).includes("tabs"), `${target} must not require tabs`);
     assert(!(manifest.permissions ?? []).includes("webNavigation"), `${target} must not require webNavigation`);
 
-    if (browser === "chrome" && manifestVersion === 3) {
+    if (browser === "firefox") {
+        assert(manifest.background === undefined, `${target} must not contain a plugin background`);
+        assert(!(manifest.permissions ?? []).includes("storage"), `${target} must not declare storage`);
+        assert(!(manifest.permissions ?? []).includes("scripting"), `${target} must not declare scripting`);
+    } else if (manifestVersion === 3) {
         assert(typeof manifest.background?.service_worker === "string", "Chrome MV3 must use a service worker");
         assertIncludes(manifest.permissions, "storage", "Chrome MV3 permissions");
         assertIncludes(manifest.permissions, "scripting", "Chrome MV3 permissions");
@@ -132,7 +152,7 @@ const buildAndInspect = ({browser, manifestVersion}) => {
         assertIncludes(manifest.permissions, "http://127.0.0.1/*", `${target} permissions`);
     }
 
-    inspectBundle(outputDir, manifest);
+    inspectBundle(outputDir, manifest, browser !== "firefox");
 
     return outputDir;
 };
