@@ -1,4 +1,4 @@
-// biome-ignore lint/suspicious/noEmptyInterface: Keep this empty to allow declaration merging in consumer projects
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Consumer projects augment this interface.
 export interface RemoteConfig {}
 
 /**

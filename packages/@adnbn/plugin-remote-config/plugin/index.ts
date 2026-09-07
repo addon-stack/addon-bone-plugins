@@ -1,6 +1,8 @@
-import {DefinePlugin} from "@rspack/core";
 import {definePlugin, getEnv} from "adnbn";
+
+import {DefinePlugin} from "@rspack/core";
 import isURL from "is-url";
+
 import type {RemoteConfig, RemoteConfigOptions, ValueOrGetter} from "./types";
 
 export type {RemoteConfig, RemoteConfigOptions};

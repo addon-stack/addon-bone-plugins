@@ -1,10 +1,13 @@
-import {SecureStorage, Storage} from "@addon-core/storage";
 import {defineService} from "adnbn";
+
+import {SecureStorage, Storage} from "@addon-core/storage";
+
 import AwaitLock from "await-lock";
 import addMinutes from "date-fns/addMinutes";
 import formatISO from "date-fns/formatISO";
 import isFuture from "date-fns/isFuture";
 import parseISO from "date-fns/parseISO";
+
 import {getRemoteConfigOptions} from "./api";
 import type {RemoteConfig} from "./types";
 
@@ -111,7 +114,9 @@ class RemoteConfigService {
     }
 
     private async setUrl(url?: string): Promise<void> {
-        url && (await this.configStorage.set("url", url));
+        if (url) {
+            await this.configStorage.set("url", url);
+        }
     }
 }
 

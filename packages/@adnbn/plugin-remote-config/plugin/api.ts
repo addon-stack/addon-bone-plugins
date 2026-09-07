@@ -1,13 +1,16 @@
-import {isBackground} from "@addon-core/browser";
 import {getEnv, getService as getServiceProxy} from "adnbn";
 import {getService as getServiceOrigin} from "adnbn/service";
+
+import {isBackground} from "@addon-core/browser";
+
 import isURL from "is-url";
+
 import type {RemoteConfig, RemoteConfigOptions} from "./types";
 
 export const getRemoteConfig = async <T extends RemoteConfig = RemoteConfig>(): Promise<T> => {
     const service = isBackground() ? getServiceOrigin : getServiceProxy;
 
-    return await service("@adnbn/plugin-remote-config/service").get();
+    return await service("@adnbn/plugin-remote-config/service").get() as T;
 };
 
 export const getRemoteConfigOptions = (): RemoteConfigOptions => {
@@ -18,11 +21,13 @@ export const getRemoteConfigOptions = (): RemoteConfigOptions => {
         options = __REMOTE_CONFIG_OPTIONS__;
     } catch {
         console.error(
-            "Failed to load @adnbn/plugin-remote-config parameters. Make sure the plugin is properly configured in the adnbn configuration file."
+            "Failed to load @adnbn/plugin-remote-config parameters. " +
+            "Make sure the plugin is properly configured in the adnbn configuration file."
         );
     }
 
-    let {url, ttl = 1440, config = {}} = options;
+    let {url} = options;
+    const {ttl = 1440, config = {}} = options;
 
     if (typeof url === "string") {
         url = isURL(url) ? url : getEnv(url);
