@@ -87,7 +87,8 @@ or its applicable fallback. With no resolved endpoint, no host permission is add
 
 ## How it works
 
-1. Build-time options and environment values resolve once for each build and are shared by the manifest and runtime.
+1. The `startup` hook resolves options and environment values once when the builder starts. The manifest and runtime
+   share these values, including during watch rebuilds.
 2. The background service reads the persisted configuration for the same endpoint URL.
 3. A fresh cached response is merged with defaults and returned without a request.
 4. Once TTL expires, the next read attempts an update. Concurrent reads share that attempt.
