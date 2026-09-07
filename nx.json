@@ -35,6 +35,15 @@
       "pattern": "{projectName}@{version}"
     },
     "conventionalCommits": {
+      "types": {
+        "refactor": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "💅 Refactors",
+            "hidden": false
+          }
+        }
+      },
       "useCommitScope": true
     },
     "version": {
