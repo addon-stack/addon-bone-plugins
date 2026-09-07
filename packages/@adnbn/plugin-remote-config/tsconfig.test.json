@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "chrome",
+      "jest",
+      "node"
+    ]
+  },
+  "include": [
+    "./plugin/**/*.ts",
+    "./tests/**/*.ts"
+  ]
+}
