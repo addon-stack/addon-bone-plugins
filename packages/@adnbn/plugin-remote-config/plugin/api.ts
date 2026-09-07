@@ -1,10 +1,9 @@
-import {getEnv, getService as getServiceProxy} from "adnbn";
+import {getService as getServiceProxy} from "adnbn";
 import {getService as getServiceOrigin} from "adnbn/service";
 
 import {isBackground} from "@addon-core/browser";
 
-import isURL from "is-url";
-
+import {normalizeOptions} from "./options";
 import type {RemoteConfig, RemoteConfigOptions} from "./types";
 
 export const getRemoteConfig = async <T extends RemoteConfig = RemoteConfig>(): Promise<T> => {
@@ -26,14 +25,5 @@ export const getRemoteConfigOptions = (): RemoteConfigOptions => {
         );
     }
 
-    let {url} = options;
-    const {ttl = 1440, config = {}} = options;
-
-    if (typeof url === "string") {
-        url = isURL(url) ? url : getEnv(url);
-    } else {
-        url = undefined;
-    }
-
-    return {ttl, config, url};
+    return normalizeOptions(options);
 };

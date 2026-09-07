@@ -1,130 +1,136 @@
 import {defineService} from "adnbn";
 
-import {SecureStorage, Storage} from "@addon-core/storage";
-
-import AwaitLock from "await-lock";
-import addMinutes from "date-fns/addMinutes";
-import formatISO from "date-fns/formatISO";
-import isFuture from "date-fns/isFuture";
-import parseISO from "date-fns/parseISO";
-
 import {getRemoteConfigOptions} from "./api";
-import type {RemoteConfig} from "./types";
-
-type StorageContract = {
-    updatedAt: string;
-    isOrigin: boolean;
-};
-
-type SecureStorageContract = {
-    config: RemoteConfig;
-    url?: string;
-};
+import type {CacheRecord} from "./cache";
+import {readCache, writeCache} from "./cache";
+import {isConfig} from "./options";
+import type {RemoteConfig, RemoteConfigOptions} from "./types";
 
 class RemoteConfigService {
-    private readonly settingsStorage = Storage.Local<StorageContract>({key: "remote-config"});
+    private pending?: Promise<RemoteConfig>;
+    private record?: CacheRecord;
+    private loaded = false;
+    private readable = false;
+    private retryAt = 0;
 
-    private readonly configStorage = SecureStorage.Local<SecureStorageContract>({key: "remote-config"});
+    constructor(private readonly options: RemoteConfigOptions) {}
 
-    private readonly lock = new AwaitLock();
+    public get(): Promise<RemoteConfig> {
+        this.pending ??= this.load().finally(() => {
+            this.pending = undefined;
+        });
 
-    constructor(
-        private defaultConfig: RemoteConfig,
-        private ttl: number,
-        private url?: string
-    ) {}
+        // Direct background callers get independent objects, as callers crossing the service transport already do.
+        return this.pending.then(config => structuredClone(config));
+    }
 
-    /**
-     * @returns {Promise<import('@adnbn/plugin-remote-config').RemoteConfig>}
-     */
-    public async get(): Promise<RemoteConfig> {
-        await this.lock.acquireAsync();
-
-        try {
-            return await this.load();
-        } catch (e) {
-            console.error("Remote Config Storage - load error:", e);
-
-            await this.setIsOrigin(false);
-
-            return this.defaultConfig;
-        } finally {
-            this.lock.release();
-        }
+    private current(): RemoteConfig {
+        return {...this.options.config, ...this.record?.config};
     }
 
     private async load(): Promise<RemoteConfig> {
-        const {config, url} = await this.configStorage.getAll();
-        const {isOrigin, updatedAt} = await this.settingsStorage.getAll();
+        const {url, ttl} = this.options;
 
-        const isUrlSame = !this.url || url === this.url;
+        if (!url) {
+            return this.options.config;
+        }
 
-        if (config && isOrigin && updatedAt && isUrlSame && isFuture(addMinutes(parseISO(updatedAt), this.ttl))) {
+        if (!this.loaded) {
+            this.loaded = true;
+
+            try {
+                this.record = await readCache(url);
+                this.readable = true;
+                const retryAt = this.record?.retryAt ?? 0;
+                const latestRetry = Date.now() + (this.options.retryDelay ?? 60_000);
+                this.retryAt = retryAt <= latestRetry ? retryAt : 0;
+            } catch (error) {
+                console.error("[@adnbn/plugin-remote-config] cache read failed", error);
+            }
+        }
+
+        const now = Date.now();
+        const updatedAt = this.record?.updatedAt;
+
+        const fresh = this.record?.config && updatedAt !== undefined && updatedAt <= now &&
+            now - updatedAt < ttl * 60_000;
+
+        if (fresh || now < this.retryAt) {
+            return this.current();
+        }
+
+        let config: RemoteConfig;
+
+        try {
+            config = await this.fetch(url);
+        } catch (error) {
+            console.error("[@adnbn/plugin-remote-config] refresh failed", error);
+            this.retryAt = Date.now() + (this.options.retryDelay ?? 60_000);
+
+            if (this.readable) {
+                this.record = {...this.record, url, retryAt: this.retryAt};
+                await this.persist();
+            }
+
+            return this.current();
+        }
+
+        this.retryAt = 0;
+        this.record = {url, config, updatedAt: Date.now()};
+        await this.persist();
+
+        return this.current();
+    }
+
+    private async persist(): Promise<void> {
+        if (!this.record) {
+            return;
+        }
+
+        try {
+            await writeCache(this.record);
+            this.readable = true;
+        } catch (error) {
+            console.error("[@adnbn/plugin-remote-config] cache write failed", error);
+        }
+    }
+
+    private async fetch(url: string): Promise<RemoteConfig> {
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+
+        const timeout = new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => {
+                reject(new Error("Remote config request timed out"));
+                controller.abort();
+            }, this.options.timeout ?? 10_000);
+        });
+
+        const request = async () => {
+            const response = await fetch(url, {credentials: "include", signal: controller.signal});
+
+            if (!response.ok) {
+                throw new Error(`Response error status: ${response.status} - ${response.statusText}`);
+            }
+
+            const config: unknown = await response.json();
+
+            if (!isConfig(config)) {
+                throw new TypeError("Remote config response must be a JSON object");
+            }
+
             return config;
-        }
+        };
 
-        let apiConfig = await this.fetch();
-
-        if (apiConfig) {
-            apiConfig = {...this.defaultConfig, ...apiConfig};
-
-            await this.setIsOrigin(true);
-            await this.setUpdatedAt();
-            await this.setConfig(apiConfig);
-            await this.setUrl(this.url);
-
-            return apiConfig;
-        }
-
-        throw new Error("No available config from storage or api");
-    }
-
-    private async fetch(): Promise<RemoteConfig> {
-        if (!this.url) {
-            throw new Error("No url provided for remote config");
-        }
-
-        const response = await fetch(this.url, {credentials: "include"});
-
-        const {ok, status, statusText} = response;
-
-        if (!ok) {
-            throw new Error(`Response error status: ${status} - ${statusText}`);
-        }
-
-        const config: RemoteConfig | undefined = await response.json();
-
-        if (!config) {
-            throw new Error("Config not found");
-        }
-
-        return config;
-    }
-
-    private async setIsOrigin(value: boolean): Promise<void> {
-        await this.settingsStorage.set("isOrigin", value);
-    }
-
-    private async setUpdatedAt(date?: Date): Promise<void> {
-        await this.settingsStorage.set("updatedAt", formatISO(date || new Date()));
-    }
-
-    private async setConfig(config: RemoteConfig): Promise<void> {
-        await this.configStorage.set("config", config);
-    }
-
-    private async setUrl(url?: string): Promise<void> {
-        if (url) {
-            await this.configStorage.set("url", url);
+        try {
+            return await Promise.race([request(), timeout]);
+        } finally {
+            clearTimeout(timer);
         }
     }
 }
 
 export default defineService({
     permissions: ["storage"],
-    init: () => {
-        const {config, ttl, url} = getRemoteConfigOptions();
-
-        return new RemoteConfigService(config, ttl, url);
-    },
+    init: () => new RemoteConfigService(getRemoteConfigOptions()),
 });

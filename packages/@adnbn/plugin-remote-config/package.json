@@ -71,24 +71,21 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
-    "await-lock": "^3.0.0",
-    "date-fns": "^2.25.0",
-    "is-url": "^1.2.4",
     "@addon-core/browser": "^0.8.0",
     "@addon-core/storage": "^0.7.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.2",
-    "@types/is-url": "^1.2.32",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "adnbn": "^0.10.0"
+    "adnbn": "^0.10.0",
+    "@rspack/core": "1.7.12"
   },
   "peerDependencies": {
     "adnbn": ">=0.4.0",
     "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
     "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
-    "@rspack/core": "^1.7.5 || ^2.0.0"
+    "@rspack/core": "^1.7.5"
   },
   "engines": {
     "node": ">=24"
