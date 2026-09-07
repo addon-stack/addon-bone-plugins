@@ -71,6 +71,8 @@ The checks cover separate boundaries:
 - ESLint formats and validates source and repository conventions.
 - `pnpm audit` blocks high- and critical-severity advisories in the development dependency graph.
 - TypeScript checks source and tests, then emits public declarations.
+- Shared helpers under `tests/helpers` use `tests/tsconfig.json` and the root Chrome/Node types for editor support.
+  `pnpm typecheck:tests` checks them directly and also runs within `pnpm typecheck`, `pnpm check`, and `pnpm verify`.
 - Jest validates package behavior and repository tooling.
 - The package check verifies that npm tarballs contain raw TypeScript and declarations only.
 - The consumer smoke installs a fresh tarball and builds Chrome and Firefox MV3/MV2 extensions with Addon Bone.
@@ -126,6 +128,30 @@ profiles. It tests failed refreshes, recovery, partial responses, the React hook
 `REMOTE_CONFIG_SMOKE_URL` to a test endpoint when creating manual builds; its default is
 `http://127.0.0.1:8765/config.json`. Remote-config's automated browser check supplies its own endpoint.
 The generated service registry is available at `tests/fixtures/plugin-remote-config-consumer/.adnbn/service.d.ts`.
+
+For manual remote-config testing, run from the repository root:
+
+```sh
+pnpm build:consumer
+pnpm serve:remote-config
+```
+
+The mock server uses the fixture's default endpoint, `http://127.0.0.1:8765/config.json`. Keep
+`REMOTE_CONFIG_SMOKE_URL` unset when building for this server. Load
+`tests/fixtures/plugin-remote-config-consumer/dist/smoke-chrome-mv3` as an unpacked Chrome extension, or load
+`tests/fixtures/plugin-remote-config-consumer/dist/smoke-firefox-mv2/manifest.json` as a temporary Firefox add-on.
+Open `http://127.0.0.1:8765/` and reload after installing the extension. The page offers response modes, and the
+extension adds a **Read config** button, a JSON result, and a React label.
+
+Read **Full config**, then select **HTTP 503**, **Invalid JSON**, **Array response**, or **Slow response** and read
+again: the previous working configuration should remain available. **Partial config** merges only with defaults
+and replaces the nested object; **Empty object** returns defaults. The fixture uses a 1-minute TTL, a 1-second
+timeout, and a 100-ms retry delay. Reads within that minute return the cached result; after expiry, the next read
+requests the selected server response. The React label is read on page mount; the button makes an explicit API
+read. Stop the server with `Ctrl+C`. `pnpm serve:consumer` remains the content-script test page for `plugin-reg-cs`.
+
+For immediate response switching, build with `REMOTE_CONFIG_SMOKE_TTL=0 pnpm build:consumer`. The automated browser
+smoke sets this override itself so its failure and recovery scenarios do not wait for the manual fixture's TTL.
 
 ## Releases
 

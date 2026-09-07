@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [remoteConfig({
         url: () => process.env.REMOTE_CONFIG_SMOKE_URL ?? "http://127.0.0.1:8765/config.json",
         config: {flag: false, label: "default", nested: {a: 1, b: 2}},
-        ttl: 0,
+        ttl: () => Number(process.env.REMOTE_CONFIG_SMOKE_TTL ?? 1),
         timeout: 1000,
         retryDelay: 100,
     })],

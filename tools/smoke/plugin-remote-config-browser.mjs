@@ -37,7 +37,13 @@ const build = url => {
     const result = spawnSync(process.execPath, ["tools/smoke/plugin-remote-config-consumer.mjs"], {
         cwd: repoRoot,
         encoding: "utf8",
-        env: {...process.env, CI: "true", KEEP_SMOKE_TEMP: "1", REMOTE_CONFIG_SMOKE_URL: url},
+        env: {
+            ...process.env,
+            CI: "true",
+            KEEP_SMOKE_TEMP: "1",
+            REMOTE_CONFIG_SMOKE_URL: url,
+            REMOTE_CONFIG_SMOKE_TTL: "0",
+        },
     });
 
     const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;

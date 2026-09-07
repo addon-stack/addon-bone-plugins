@@ -29,6 +29,9 @@ importers:
       '@swc/jest':
         specifier: ^0.2.36
         version: 0.2.39(@swc/core@1.16.1(@swc/helpers@0.5.23))
+      '@types/chrome':
+        specifier: ^0.2.7
+        version: 0.2.7
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
