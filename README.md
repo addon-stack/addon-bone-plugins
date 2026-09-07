@@ -11,6 +11,9 @@ configuration.
 - [`@adnbn/plugin-reg-cs`](packages/@adnbn/plugin-reg-cs) — activates declarative content scripts in eligible tabs
   that were already open when an extension was installed.
 
+- [`@adnbn/plugin-remote-config`](packages/@adnbn/plugin-remote-config) — loads remote JSON configuration, merges
+  successful responses with defaults, and keeps the last working configuration when updates fail.
+
 ## How plugins work
 
 Each plugin connects to Addon Bone through `defineConfig()`. Addon Bone then includes the plugin's raw TypeScript in

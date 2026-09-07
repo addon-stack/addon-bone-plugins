@@ -1,188 +1,174 @@
 # @adnbn/plugin-remote-config
 
-[![npm version](https://img.shields.io/npm/v/%40adnbn%2Fplugin-remote-config.svg?logo=npm)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
-[![npm downloads](https://img.shields.io/npm/dm/%40adnbn%2Fplugin-remote-config.svg)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
-[![CI](https://github.com/addon-stack/plugin-remote-config/actions/workflows/ci.yml/badge.svg)](https://github.com/addon-stack/plugin-remote-config/actions/workflows/ci.yml)
+Keep your extension configured through a remote JSON endpoint, with a persistent cache that remains useful when
+updates fail.
 
-Remote configuration plugin for [Addon Bone](https://addonbone.com).
+[![npm version](https://img.shields.io/npm/v/%40adnbn%2Fplugin-remote-config.svg?logo=npm&style=for-the-badge)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![npm downloads](https://img.shields.io/npm/dm/%40adnbn%2Fplugin-remote-config.svg?style=for-the-badge&color=blue)](https://www.npmjs.com/package/@adnbn/plugin-remote-config)
+[![CI](https://img.shields.io/github/actions/workflow/status/addon-stack/addon-bone-plugins/ci.yml?style=for-the-badge)](https://github.com/addon-stack/addon-bone-plugins/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
 
-## Features
+## Purpose
 
-- Fetch JSON configuration from a remote endpoint with transparent caching.
-- Configurable cache time-to-live (TTL) in minutes.
-- Fallback to default configuration on failure.
-- Access configuration in background scripts, content scripts, or service workers.
-- React hook for easy consumption in React apps.
+Fetch configuration through an Addon Bone background service and read it from background scripts, content scripts,
+extension pages, or React components. Successful responses are merged with your defaults. Failed updates retain the
+last working configuration, including after a browser or service-worker restart when persistence is available.
 
 ## Installation
 
-### npm:
-
-```bash
-npm install @adnbn/plugin-remote-config
-```
-
-### pnpm:
-
-```bash
+```sh
 pnpm add @adnbn/plugin-remote-config
 ```
 
-### yarn:
-
-```bash
-yarn add @adnbn/plugin-remote-config
-```
-
-## Usage
-
-### Plugin Configuration
-
-In your Addon Bone config (e.g., `adnbn.config.ts`), register the plugin:
+## Quick start
 
 ```ts
 import {defineConfig} from "adnbn";
 import remoteConfig from "@adnbn/plugin-remote-config";
 
 export default defineConfig({
-    plugins: [
-        remoteConfig({
-            url: "https://example.com/config.json", // or an env var name
-            ttl: 60, // cache TTL in minutes (default: 1440)
-            config: {
-                // default/fallback config
-                featureFlag: false,
-                apiEndpoint: "https://api.example.com",
-            },
-        }),
-    ],
+    plugins: [remoteConfig({
+        url: "https://example.com/config.json",
+        config: {featureFlag: false},
+    })],
 });
 ```
 
-### Accessing Configuration
-
-#### In a content script, background, or any other extension layer
+Read the current configuration from any extension layer:
 
 ```ts
 import {getRemoteConfig} from "@adnbn/plugin-remote-config/api";
 
-async function initialize() {
-    try {
-        const config = await getRemoteConfig<{apiEndpoint: string; featureFlag: boolean}>();
-        console.log("Remote config:", config);
-    } catch (error) {
-        console.error("Failed to load remote config:", error);
-    }
-}
+const config = await getRemoteConfig<{featureFlag: boolean}>();
 ```
 
-#### In React
+## Permissions
 
-Use the useRemoteConfig hook directly inside your components:
+The plugin service declares `storage` on Chrome and Firefox, in both Manifest V2 and V3. The manifest hook adds host
+access for the resolved HTTP(S) configuration endpoint. It adds no `tabs`, `scripting`, `cookies`, `alarms`, or
+`unlimitedStorage` permission and does not request optional permissions at runtime.
+
+### `storage`
+
+The service saves the remote JSON response, its source URL, last successful update time, and retry deadline in
+`storage.local`, under `remote-config`. Data is not encrypted or synchronized. The saved response is merged with the
+current build's defaults when read. One storage write updates the accepted response and its metadata together.
+
+Suggested store justification:
+
+```text
+The storage permission is used to cache the extension's remote configuration and update metadata locally. This lets
+configured features keep working when the configuration endpoint is unavailable and avoids repeated failed requests.
+The cache is not synchronized between devices.
+```
+
+### Automatically added host access
+
+The plugin adds the endpoint's scheme and hostname as a match pattern, for example `https://example.com/*`. Addon Bone
+emits it in `host_permissions` for MV3 and in `permissions` for MV2. Query parameters and URL credentials do not belong
+in permission patterns. Browser network host access applies to the host, rather than only the JSON file's path.
+
+Suggested store justification:
+
+```text
+Host access to the configuration server is used by the extension's background service to retrieve JSON configuration
+for its configured features. The response supplies data and settings, not executable extension code.
+```
+
+Adapt the justification to describe your extension's actual features. Requests retain the existing
+`credentials: "include"` behavior; applicable cookies may accompany them according to browser rules.
+
+### Consumer-owned host access
+
+The plugin adds access to its own endpoint. Other hosts used by the consumer remain the consumer's responsibility,
+including any additional origins required by redirects. A custom CSP must permit the request through `connect-src`
+or its applicable fallback. With no resolved endpoint, no host permission is added; the service still declares
+`storage`, while reads return defaults without storage or network access.
+
+## How it works
+
+1. Build-time options and environment values resolve once for each build and are shared by the manifest and runtime.
+2. The background service reads the persisted configuration for the same endpoint URL.
+3. A fresh cached response is merged with defaults and returned without a request.
+4. Once TTL expires, the next read attempts an update. Concurrent reads share that attempt.
+5. A successful JSON object replaces the previous remote response and is merged shallowly with defaults.
+6. A failed request returns the last working configuration; defaults are used when no working response is available.
+7. Failed attempts wait for the configured retry delay before another read can retry. No periodic polling is started.
+
+TTL controls freshness, not whether a cached configuration is usable. Failed updates do not advance the success time.
+The timeout covers both the request and reading its JSON body. A storage read failure still allows a network request;
+a write failure retains a successful result in memory, with persistence available again on a later successful write.
+
+### Partial responses
+
+Every successful response uses `{...defaults, ...response}`. Previous remote values do not participate in that merge.
+An empty object is a valid successful response and restores the defaults. Nested objects and arrays are replaced
+whole; explicit `false`, `0`, empty strings, and `null` are retained.
+
+For example, defaults `{enabled: false, label: "default"}` and a previous response `{enabled: true, label: "old"}`
+produce `{enabled: false, label: "new"}` after a successful response `{label: "new"}`. A failed request retains the
+previous working result instead.
+
+## Options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `url` | `"REMOTE_CONFIG_URL"` | HTTP(S) URL or environment variable name; an empty string disables the endpoint. |
+| `config` | `{}` | Default JSON object, shallowly merged with each accepted response. |
+| `ttl` | `1440` | Freshness in minutes. Zero refreshes on each read, subject to failed-request retry delay. |
+| `timeout` | `10000` | Request and JSON-body timeout in milliseconds; must be positive and within browser timer limits. |
+| `retryDelay` | `60000` | Delay after a failed attempt, in milliseconds. Zero permits the next read to retry immediately. |
+
+Each option also accepts a build-time getter. Numeric options must be finite; TTL and retry delay must be
+non-negative. Environment variables that are not defined leave the endpoint disabled. URL changes invalidate the
+previous source's cache and retry deadline. Defaults are read from the current build.
+
+## React
 
 ```tsx
 import {useRemoteConfig} from "@adnbn/plugin-remote-config/hooks";
 
-function FeatureComponent() {
-    const {featureFlag, apiEndpoint} = useRemoteConfig();
+function Feature() {
+    const enabled = useRemoteConfig<{featureFlag: boolean}, boolean>(config => config.featureFlag);
 
-    return (
-        <div>
-            {featureFlag ? <p>New feature enabled!</p> : <p>Feature disabled.</p>}
-            <p>API Endpoint: {apiEndpoint}</p>
-        </div>
-    );
+    return <span>{enabled ? "Enabled" : "Disabled"}</span>;
 }
 ```
 
-## Options
+The hook starts with defaults and requests the current configuration when mounted. It supports an optional selector
+and ignores results after unmounting. It does not subscribe to later service updates or poll the endpoint.
 
-The plugin accepts the following options:
+## TypeScript
 
-- `url?: string` — Remote endpoint URL or an environment variable key resolving to a URL.
-- `ttl?: number` — Cache time-to-live in minutes. Defaults to `1440` (1 day).
-- `config: RemoteConfig` — Default configuration object used as fallback.
+Augment the public interface once in a declaration file included by your consumer:
 
-## TypeScript Configuration
-
-To enable proper TypeScript support and type safety for your configuration, you need to extend the `RemoteConfig` interface in your project.
-
-### Creating Type Definitions
-
-Create a declaration file in your project (e.g., `types/config.d.ts` or `config.d.ts`) and extend the `RemoteConfig` interface:
-
-```typescript
+```ts
 import "@adnbn/plugin-remote-config";
 
 declare module "@adnbn/plugin-remote-config" {
     interface RemoteConfig {
         featureFlag: boolean;
-        apiEndpoint: string;
-        theme: "light" | "dark";
-        maxRetries: number;
-        endpoints: {
-            auth: string;
-            api: string;
-        };
     }
 }
 ```
 
-### Benefits of Type Definitions
+Both `getRemoteConfig()` and `useRemoteConfig()` then use the augmented interface. `getRemoteConfigOptions()` remains
+available from `/api` to read build-time options. `/service` remains the background service entrypoint.
 
-Once you've defined your configuration types, you'll get:
+## Guarantees and limitations
 
-- **IntelliSense support** - Auto-completion for configuration properties
-- **Type checking** - Compile-time validation of configuration usage
-- **Refactoring safety** - Automatic updates when renaming properties
+- Requests and persisted state are owned by one background service. Direct callers receive independent result objects.
+- The response must be a JSON object. TypeScript types do not validate application-specific field values at runtime.
+- Cached data can remain stale indefinitely while updates fail. There is no maximum offline lifetime.
+- If storage is unavailable, only the current service instance can retain successful values. A restart then requires
+  working storage, a successful request, or defaults.
+- Retry deadlines are persisted on a best-effort basis. Storage failures or manual cache clearing can allow another
+  attempt after a service restart.
+- Updating from older versions reads the historical encrypted cache once and moves it to ordinary local storage.
+  A previous `isOrigin: false` does not discard the saved configuration. The encrypted key is removed only after the
+  ordinary local record has been saved; no new encrypted records are created.
+- Standalone source checking uses a development-only service registry declaration. Consumers receive their real
+  service registry from Addon Bone; the development declaration is excluded from the npm tarball.
 
-### Usage with Types
-
-After defining your types, you can use the configuration with full type safety:
-
-```typescript
-// No need for generic type parameter anymore
-const config = await getRemoteConfig();
-console.log(config.featureFlag); // ✅ TypeScript knows this is boolean
-console.log(config.apiEndpoint); // ✅ TypeScript knows this is string
-console.log(config.theme); // ✅ TypeScript knows this is 'light' | 'dark'
-```
-
-```tsx
-// In React components
-function MyComponent() {
-    const config = useRemoteConfig();
-
-    return (
-        <div className={config.theme === "dark" ? "dark-theme" : "light-theme"}>
-            {config.featureFlag && <NewFeature />}
-        </div>
-    );
-}
-```
-
-### Configuration Validation
-
-Make sure your default configuration in `adnbn.config.ts` matches your type definitions:
-
-```typescript
-export default defineConfig({
-    plugins: [
-        remoteConfig({
-            url: "https://example.com/config.json",
-            ttl: 60,
-            config: {
-                featureFlag: false,
-                apiEndpoint: "https://api.example.com",
-                theme: "light",
-                maxRetries: 3,
-                endpoints: {
-                    auth: "https://auth.example.com",
-                    api: "https://api.example.com",
-                },
-            } satisfies RemoteConfig, // ✅ Type validation
-        }),
-    ],
-});
-```
+Development, testing, and release infrastructure lives in the
+[Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).

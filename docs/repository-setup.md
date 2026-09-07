@@ -43,7 +43,8 @@ commit, tags, GitHub Releases, and their push.
 
 ## npm trusted publishing
 
-Configure a trusted publisher for `@adnbn/plugin-reg-cs` in npm with:
+Configure a trusted publisher for each migrated npm package (`@adnbn/plugin-reg-cs` and
+`@adnbn/plugin-remote-config`) with:
 
 - organization/repository: `addon-stack/addon-bone-plugins`;
 - workflow filename: `release.yml`;
@@ -64,3 +65,14 @@ following from the remote systems:
 - a clean external Addon Bone project can install the published version and build Chrome and Firefox MV3/MV2.
 
 Local tests and dry-runs do not prove GitHub App permissions, branch rules, npm OIDC, or registry publication.
+
+## Importing another history
+
+Preserve the history-import merge when integrating a migration into `main`. Include scoped imported tags in the
+separately authorized push; local import refs do not need publication. `tools/commits/check.mjs` validates new
+commits and exempts only exact rewritten SHAs listed in the reviewed migration commit maps. Historical messages
+retain their original scopes. Commit messages created in this repository remain subject to the current rules.
+
+Before releasing remote-config from this repository, verify that its npm trusted publisher targets this repository,
+`release.yml`, and the `release` environment. Keep the existing source repository available for historical GitHub
+metadata. A local dry-run does not prove registry authentication or publication.

@@ -43,6 +43,16 @@
 - Process declarations in manifest order. Within a tab, await the whole CSS array before attempting the whole JavaScript
   array; parallelism and `Promise.allSettled` are limited to independent eligible tabs in one declaration.
 
+## Remote configuration
+
+- A successful JSON object is shallowly merged with defaults only. Do not merge successful responses with previous
+  remote values or introduce deep merging. Empty objects and explicit falsy values are valid responses.
+- Failed refreshes retain the last working response for the same URL. TTL controls freshness, not cache usability.
+- New configuration, URL, success time, and retry metadata use one ordinary `storage.local` record at `remote-config`.
+  Encrypted storage is used only to read historical records during migration; never create new encrypted records.
+- Keep network and storage failures independent, share concurrent refreshes, and bound requests and retry frequency.
+- Keep the four public exports and declaration-merging contract. Addon Bone owns compilation and service transport.
+
 ## Workspace and releases
 
 - An Nx project name must exactly equal its npm package name.

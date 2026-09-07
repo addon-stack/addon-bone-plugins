@@ -75,7 +75,8 @@ The checks cover separate boundaries:
 - The package check verifies that npm tarballs contain raw TypeScript and declarations only.
 - The consumer smoke installs a fresh tarball and builds Chrome and Firefox MV3/MV2 extensions with Addon Bone.
 - The browser smoke loads Chrome MV3 and Firefox MV2 builds in real browsers and verifies CSS-before-JavaScript
-  execution.
+  execution for `plugin-reg-cs`. It also verifies remote-config API/hook access, failed refresh recovery, and Chrome
+  service-worker restart persistence.
 
 ## Manual browser testing
 
@@ -98,6 +99,20 @@ browser unfreezes them.
 
 The local server uses Node.js and needs no additional package. Press `Ctrl+C` to stop it. Generated manual builds live
 under the ignored `output/` directory; CI uses temporary directories and does not update this local output.
+
+## Remote configuration validation
+
+The remote-config consumer installs a freshly packed tarball and builds Chrome/Firefox MV2/MV3 with Addon Bone
+0.10.0. Its React fixture declares `scheduler` explicitly because that framework version resolves React dependencies
+through consumer aliases. The package itself only imports React in its hooks entrypoint.
+
+`pnpm check:consumer` and `pnpm check:browser` run both migrated packages. For a narrow runtime check, use
+`node tools/smoke/plugin-remote-config-browser.mjs`; it starts an isolated local endpoint and disposable browser
+profiles. It tests failed refreshes, recovery, partial responses, the React hook, and Chrome service-worker restarts.
+
+`pnpm build:consumer` also writes remote-config builds under `output/plugin-remote-config`. Set
+`REMOTE_CONFIG_SMOKE_URL` to a test endpoint when creating manual builds; its default is
+`http://127.0.0.1:8765/config.json`. Remote-config's automated browser check supplies its own endpoint.
 
 ## Releases
 
