@@ -1,3 +1,13 @@
+## 0.6.1 (2026-09-07)
+
+### 🩹 Fixes
+
+- **@adnbn/plugin-reg-cs:** exclude Firefox background ([a2e21fc](https://github.com/addon-stack/addon-bone-plugins/commit/a2e21fc))
+
+### ❤️ Thank You
+
+- Anjey Tsibylskij @atldays
+
 ## 0.6.0 (2026-09-06)
 
 ### 🚀 Features
