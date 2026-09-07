@@ -15,6 +15,7 @@
   },
   "include": [
     "adnbn.config.ts",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    ".adnbn/**/*.d.ts"
   ]
 }

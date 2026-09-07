@@ -34,7 +34,7 @@ const importGroups = [
 export default tseslint.config(
     {
         ignores: [
-            "**/node_modules/**", "**/.git/**", "**/.nx/**", "**/.pnpm-store/**",
+            "**/node_modules/**", "**/.git/**", "**/.nx/**", "**/.pnpm-store/**", "**/.adnbn/**",
             "**/dist/**", "**/dist-types/**", "**/coverage/**", "**/output/**",
             "**/package/**", "**/.cache/**", "**/.output/**", "**/.rstest-temp/**",
             "**/.idea/**", "**/.vscode/**", ".husky/_/**", "**/.DS_Store",

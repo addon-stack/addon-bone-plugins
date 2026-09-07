@@ -1,4 +1,5 @@
 .DS_Store
+.adnbn/
 .env
 .env.*
 !.env.example

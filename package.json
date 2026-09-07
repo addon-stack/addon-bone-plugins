@@ -10,7 +10,7 @@
   },
   "scripts": {
     "audit:security": "pnpm audit --audit-level high",
-    "build:consumer": "node ./tools/smoke/run.mjs consumer --keep-output",
+    "build:consumer": "pnpm types && node ./tools/smoke/build-consumers.mjs",
     "check": "pnpm exec nx run-many -t check",
     "check:affected": "pnpm exec nx affected -t check",
     "check:browser": "node ./tools/smoke/run.mjs browser",

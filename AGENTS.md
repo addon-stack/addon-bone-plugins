@@ -27,6 +27,8 @@
   smoke.
 - Consumer validation must install a freshly packed tarball; do not validate through a workspace link or neighboring
   checkout.
+- `pnpm build:consumer` runs local development builds inside each fixture with workspace dependencies. Addon Bone
+  generates `.adnbn` and `dist` there directly. Keep this workflow separate from packed-consumer validation.
 
 ## Injection architecture
 

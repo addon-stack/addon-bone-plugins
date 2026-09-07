@@ -80,7 +80,7 @@ The checks cover separate boundaries:
 
 ## Manual browser testing
 
-Build the consumer fixture and start its local test page:
+Build both consumer fixtures locally and start the content-script test page:
 
 ```sh
 pnpm build:consumer
@@ -88,8 +88,9 @@ pnpm serve:consumer
 ```
 
 Open the printed `http://127.0.0.1:<port>/top.html` URL before installing the extension. Load
-`output/plugin-reg-cs/smoke-chrome-mv3` as an unpacked Chrome extension or
-`output/plugin-reg-cs/smoke-firefox-mv3/manifest.json` as a temporary Firefox add-on. MV2 variants are available in
+`tests/fixtures/plugin-reg-cs-consumer/dist/smoke-chrome-mv3` as an unpacked Chrome extension or
+`tests/fixtures/plugin-reg-cs-consumer/dist/smoke-firefox-mv3/manifest.json` as a temporary Firefox add-on.
+MV2 variants are available in
 the corresponding `smoke-chrome-mv2` and `smoke-firefox-mv2` directories.
 
 For every install-time test, remove the extension, reload the page while the extension is absent, and install it again.
@@ -97,8 +98,15 @@ Using the extension's Reload button does not reproduce a fresh installation. The
 Discarded tabs use the browser's normal reload behavior; frozen Chrome MV3 tabs are queued and processed after the
 browser unfreezes them.
 
-The local server uses Node.js and needs no additional package. Press `Ctrl+C` to stop it. Generated manual builds live
-under the ignored `output/` directory; CI uses temporary directories and does not update this local output.
+The local server uses Node.js and needs no additional package. Press `Ctrl+C` to stop it.
+
+`pnpm build:consumer` first emits the workspace packages' declarations, then runs Addon Bone directly inside each
+fixture for Chrome/Firefox MV2/MV3. The framework generates `.adnbn` and `dist` there. TypeScript checks the fixture
+after each build, including its generated declarations; `.adnbn` reflects the most recent target.
+
+Install fixture dependencies with the root `pnpm install`. Local builds use workspace packages for development.
+`pnpm check:consumer` independently installs freshly packed tarballs in temporary directories for publication
+validation and does not change the local fixtures' generated files.
 
 ## Remote configuration validation
 
@@ -106,13 +114,18 @@ The remote-config consumer installs a freshly packed tarball and builds Chrome/F
 0.10.0. Its React fixture declares `scheduler` explicitly because that framework version resolves React dependencies
 through consumer aliases. The package itself only imports React in its hooks entrypoint.
 
+After each build, the consumer checks the generated service registry against its augmented `RemoteConfig` interface
+for both direct and proxy access. The service method's JSDoc preserves the public `import(...)` reference; removing
+it causes the framework parser to inline the package's empty base interface as `{}` and lose consumer augmentation.
+
 `pnpm check:consumer` and `pnpm check:browser` run both migrated packages. For a narrow runtime check, use
 `node tools/smoke/plugin-remote-config-browser.mjs`; it starts an isolated local endpoint and disposable browser
 profiles. It tests failed refreshes, recovery, partial responses, the React hook, and Chrome service-worker restarts.
 
-`pnpm build:consumer` also writes remote-config builds under `output/plugin-remote-config`. Set
+`pnpm build:consumer` writes remote-config builds under `tests/fixtures/plugin-remote-config-consumer/dist`. Set
 `REMOTE_CONFIG_SMOKE_URL` to a test endpoint when creating manual builds; its default is
 `http://127.0.0.1:8765/config.json`. Remote-config's automated browser check supplies its own endpoint.
+The generated service registry is available at `tests/fixtures/plugin-remote-config-consumer/.adnbn/service.d.ts`.
 
 ## Releases
 
