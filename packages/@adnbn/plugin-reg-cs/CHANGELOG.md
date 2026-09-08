@@ -1,3 +1,7 @@
+## 0.6.2 (2026-09-08)
+
+This was a version bump only for @adnbn/plugin-reg-cs to align it with other projects, there were no code changes.
+
 ## 0.6.1 (2026-09-07)
 
 ### 🩹 Fixes

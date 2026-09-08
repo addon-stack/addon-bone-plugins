@@ -1,3 +1,41 @@
+## 0.4.0 (2026-09-08)
+
+### 🚀 Features
+
+- ⚠️  **@adnbn/plugin-remote-config:** add typed config selection and deep defaults ([b54d52b](https://github.com/addon-stack/addon-bone-plugins/commit/b54d52b))
+- **@adnbn/plugin-remote-config:** retain working configuration when refresh fails ([59bc232](https://github.com/addon-stack/addon-bone-plugins/commit/59bc232))
+
+### 🩹 Fixes
+
+- ⚠️  **@adnbn/plugin-remote-config:** harden configuration and request options ([1aab350](https://github.com/addon-stack/addon-bone-plugins/commit/1aab350))
+- **@adnbn/plugin-remote-config:** preserve generated service types ([3e81b9e](https://github.com/addon-stack/addon-bone-plugins/commit/3e81b9e))
+- **@adnbn/plugin-remote-config:** migrate package to monorepo ([aa76554](https://github.com/addon-stack/addon-bone-plugins/commit/aa76554))
+
+### 💅 Refactors
+
+- ⚠️  **@adnbn/plugin-remote-config:** reorganize cache storage ([617d163](https://github.com/addon-stack/addon-bone-plugins/commit/617d163))
+- **@adnbn/plugin-remote-config:** resolve options at startup ([ae5ea84](https://github.com/addon-stack/addon-bone-plugins/commit/ae5ea84))
+
+### ⚠️  Breaking Changes
+
+- **@adnbn/plugin-remote-config:** add typed config selection and deep defaults  ([b54d52b](https://github.com/addon-stack/addon-bone-plugins/commit/b54d52b))
+  Import React helpers from /react instead of /hooks.
+  Provide complete config defaults, including required nested fields. Successful
+  responses now merge deeply with defaults instead of replacing nested objects.
+  Augment RemoteConfig instead of passing generic configuration overrides.
+- **@adnbn/plugin-remote-config:** harden configuration and request options  ([1aab350](https://github.com/addon-stack/addon-bone-plugins/commit/1aab350))
+  Remote config requests now default to credentials: "omit".
+  Set credentials: "include" explicitly for cookie-authenticated endpoints.
+- **@adnbn/plugin-remote-config:** reorganize cache storage  ([617d163](https://github.com/addon-stack/addon-bone-plugins/commit/617d163))
+  Store configuration in ordinary storage.local using
+  namespace @adnbn/plugin-remote-config and key cache. Previous plain and
+  encrypted records are ignored. Defaults apply until the first successful
+  remote request.
+
+### ❤️ Thank You
+
+- Anjey Tsibylskij @atldays
+
 # Changelog
 
 ## 🚀 Release `@adnbn/plugin-remote-config` v0.3.1 (2025-10-23)
