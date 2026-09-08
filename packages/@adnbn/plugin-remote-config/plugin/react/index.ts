@@ -1,0 +1,1 @@
+export {useRemoteConfig} from "./hooks";

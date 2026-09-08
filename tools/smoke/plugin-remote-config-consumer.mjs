@@ -162,7 +162,7 @@ try {
     const installedPackage = readJson(path.join(installedPackageDir, "package.json"));
 
     assert(
-        Object.keys(installedPackage.exports).join(",") === ".,./api,./hooks,./service",
+        Object.keys(installedPackage.exports).join(",") === ".,./api,./react,./service",
         "Public export contract changed"
     );
 
@@ -191,7 +191,7 @@ export default defineConfig({
     name: "Remote Config Environment Smoke",
     description: "Validates build-time environment resolution.",
     version: "1.0.0",
-    plugins: [remoteConfig()],
+    plugins: [remoteConfig({config: {flag: false, label: "default", nested: {a: 1, b: 2}}})],
 });
 `);
 

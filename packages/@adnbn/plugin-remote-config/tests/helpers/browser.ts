@@ -2,11 +2,11 @@ import {createBrowserHarness, installBrowserGlobals} from "@addon-core/browser/t
 
 import {createStorageHarness, installStorageHarness} from "../../../../../tests/helpers/storage";
 
-export const setupBrowserHarness = () => {
+export const setupBrowserHarness = (context: "serviceWorker" | "contentScript" = "serviceWorker") => {
     const browser = createBrowserHarness();
 
     const restoreBrowser = installBrowserGlobals(browser, {
-        context: "serviceWorker",
+        context,
         globals: {navigator: {locks: navigator.locks}},
         profile: "chrome",
     });

@@ -72,7 +72,7 @@ it("resolves options at startup and reuses them across hooks and rebuilds", () =
 });
 
 it.each(["chrome", "firefox"])("keeps the service and endpoint access enabled in %s builds", browser => {
-    const plugin = pluginFactory({url: "https://config.example/config.json"}) as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}, url: "https://config.example/config.json"}) as unknown as TestPlugin;
 
     for (const manifestVersion of [2, 3]) {
         plugin.startup({config: {browser, manifestVersion}});
@@ -84,7 +84,7 @@ it.each(["chrome", "firefox"])("keeps the service and endpoint access enabled in
 });
 
 it("adds no host permission for an explicitly disabled endpoint", () => {
-    const plugin = pluginFactory({url: ""}) as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}, url: ""}) as unknown as TestPlugin;
     const addHostPermission = jest.fn();
     plugin.startup({config: {}});
     plugin.manifest({config: {}, manifest: {addHostPermission}});
@@ -94,7 +94,7 @@ it("adds no host permission for an explicitly disabled endpoint", () => {
 
 it.each([undefined, ""])("warns once at startup when the default environment variable is %j", value => {
     jest.mocked(getEnv).mockReturnValue(value);
-    const plugin = pluginFactory() as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}}) as unknown as TestPlugin;
     const addHostPermission = jest.fn();
     plugin.startup({config: {}});
     plugin.manifest({config: {}, manifest: {addHostPermission}});
@@ -107,7 +107,7 @@ it.each([undefined, ""])("warns once at startup when the default environment var
 });
 
 it("identifies a missing custom environment variable in the warning", () => {
-    const plugin = pluginFactory({url: "CUSTOM_CONFIG_URL"}) as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}, url: "CUSTOM_CONFIG_URL"}) as unknown as TestPlugin;
     plugin.startup({config: {}});
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"CUSTOM_CONFIG_URL" is unset or empty'));
 });
@@ -118,22 +118,28 @@ it.each([
     {url: "https://user:password@config.example/config.json"},
     {credentials: "unsupported" as any},
 ])("rejects invalid build parameters at startup: %j", options => {
-    const plugin = pluginFactory(options) as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}, ...options}) as unknown as TestPlugin;
     expect(() => plugin.startup({config: {}})).toThrow();
 });
 
 it("accepts fractional TTL, zero TTL and a disabled retry delay", () => {
-    expect(normalizeOptions({ttl: 0.5, retryDelay: 0})).toMatchObject({ttl: 0.5, retryDelay: 0});
-    expect(normalizeOptions({ttl: 0})).toMatchObject({ttl: 0});
+    expect(normalizeOptions({config: {}, ttl: 0.5, retryDelay: 0})).toMatchObject({ttl: 0.5, retryDelay: 0});
+    expect(normalizeOptions({config: {}, ttl: 0})).toMatchObject({ttl: 0});
 });
 
-it.each([[], null, "config", new Date()])("rejects non-object defaults: %j", config => {
+it.each([undefined, [], null, "config", new Date()])("rejects missing or non-object defaults: %j", config => {
     expect(() => normalizeOptions({config: config as any})).toThrow("defaults must be a JSON object");
+});
+
+it("reports missing defaults when a JavaScript caller omits plugin options", () => {
+    // @ts-expect-error JavaScript callers can omit the options required by the TypeScript signature.
+    const plugin = pluginFactory() as unknown as TestPlugin;
+    expect(() => plugin.startup({config: {}})).toThrow(new TypeError("Remote config defaults must be a JSON object"));
 });
 
 it("allows a URL getter to disable the endpoint even when the default environment variable exists", () => {
     jest.mocked(getEnv).mockReturnValue("https://config.example/config.json");
-    const plugin = pluginFactory({url: () => undefined}) as unknown as TestPlugin;
+    const plugin = pluginFactory({config: {}, url: () => undefined}) as unknown as TestPlugin;
     const addHostPermission = jest.fn();
     plugin.startup({config: {}});
     plugin.manifest({config: {}, manifest: {addHostPermission}});

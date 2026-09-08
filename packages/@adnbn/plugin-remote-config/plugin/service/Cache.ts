@@ -1,11 +1,11 @@
 import {storageLocal, type StorageProvider} from "@addon-core/storage";
 
 import {isConfig} from "../options";
-import {PluginName, type RemoteConfig} from "../types";
+import {PluginName} from "../types";
 
 interface CacheRecord {
     url: string;
-    config?: RemoteConfig;
+    config?: Record<string, unknown>;
     updatedAt?: number;
     retryAt?: number;
 }
@@ -27,7 +27,7 @@ export default class Cache {
         private readonly retryDelay: number
     ) {}
 
-    public get config(): RemoteConfig | undefined {
+    public get config(): Record<string, unknown> | undefined {
         return this.record?.config;
     }
 
@@ -62,7 +62,7 @@ export default class Cache {
         return !fresh && now >= this.retryAt;
     }
 
-    public async update(config: RemoteConfig): Promise<void> {
+    public async update(config: Record<string, unknown>): Promise<void> {
         this.retryAt = 0;
         this.record = {url: this.url, config, updatedAt: Date.now()};
         await this.persist();

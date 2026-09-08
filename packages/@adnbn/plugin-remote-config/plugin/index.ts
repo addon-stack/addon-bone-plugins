@@ -12,19 +12,22 @@ import {
 } from "./types";
 
 export type {RemoteConfig, RemoteConfigOptions, ResolvedRemoteConfigOptions};
+export type {RemoteConfigPath, RemoteConfigValue} from "./types";
 
-export default definePlugin((options: Partial<ValueOrGetter<RemoteConfigOptions>> = {}) => {
+export default definePlugin((options: ValueOrGetter<RemoteConfigOptions>) => {
     let resolved: ResolvedRemoteConfigOptions;
 
     return {
         name: PluginName,
         service: true,
         startup: () => {
+            // JavaScript callers with missing options must still reach defaults validation.
             const values = Object.fromEntries(
-                Object.entries(options).map(([key, value]) => [key, typeof value === "function" ? value() : value])
-            );
+                Object.entries(options ?? {})
+                    .map(([key, value]) => [key, typeof value === "function" ? value() : value])
+            ) as RemoteConfigOptions;
 
-            const urlValue = options.url === undefined ? "REMOTE_CONFIG_URL" : values.url;
+            const urlValue = options?.url === undefined ? "REMOTE_CONFIG_URL" : values.url;
 
             if (urlValue !== undefined && typeof urlValue !== "string") {
                 throw new TypeError("Remote config URL must be a string or an environment variable name");

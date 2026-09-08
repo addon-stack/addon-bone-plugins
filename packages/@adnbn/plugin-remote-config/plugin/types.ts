@@ -1,8 +1,24 @@
+import type {Get, Paths} from "type-fest";
+
 /** @internal */
 export const PluginName = "@adnbn/plugin-remote-config";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Consumer projects augment this interface.
 export interface RemoteConfig {}
+
+// Keep type-fest's paths within dot-prop's supported dot syntax. Use selectors for literal special keys.
+type SelectablePath<Path> = Path extends string
+    ? Path extends `${string}${"[" | "]" | "\\"}${string}` ? never
+        : `.${Path}.` extends `${string}.${"__proto__" | "prototype" | "constructor"}.${string}` ? never
+            : unknown extends Get<RemoteConfig, Path> ? never : Path
+    : never;
+
+/** Dot paths through the consumer's augmented configuration, capped at ten recursive steps. */
+// Keep the deeper paths covered by the consumer fixture; bound expansion for recursive schemas.
+export type RemoteConfigPath = SelectablePath<Paths<RemoteConfig, {maxRecursionDepth: 10}>>;
+
+/** The selected value, including undefined for optional branches and unbounded array indices. */
+export type RemoteConfigValue<Path extends RemoteConfigPath> = Get<RemoteConfig, Path>;
 
 /**
  * Options for configuring @adnbn/plugin-remote-config.
@@ -28,15 +44,14 @@ export interface RemoteConfigOptions {
      * Example: 60 (1 hour).
      * Common default in docs: 1440 (1 day).
      */
-    ttl: number;
+    ttl?: number;
 
     /**
-     * Default configuration merged shallowly with every successful remote response.
-     * Used when no working configuration is available, including before
-     * the first successful fetch. Only properties provided here will be available
-     * until the remote configuration is loaded.
+     * Required defaults covering the consumer's RemoteConfig schema.
+     * Objects are merged deeply with each successful response; arrays are replaced.
+     * Used before the first successful fetch, including the initial React render.
      */
-    config: Partial<RemoteConfig>;
+    config: RemoteConfig;
 
     /** Maximum request and JSON-body duration in milliseconds. Defaults to 10000. */
     timeout?: number;

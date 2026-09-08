@@ -74,7 +74,7 @@ it("merges each successful partial response with defaults, excluding previous re
     const instance = service({ttl: 0});
     await expect(instance.get()).resolves.toEqual(remote);
     fetchMock.mockResolvedValue(response({nested: {a: 30}}));
-    await expect(instance.get()).resolves.toEqual({...defaults, nested: {a: 30}});
+    await expect(instance.get()).resolves.toEqual({...defaults, nested: {a: 30, b: 2}});
     expect(stored()).toEqual({url, config: {nested: {a: 30}}, updatedAt: now});
 });
 
@@ -113,7 +113,10 @@ it("keeps in-memory cache state independent between service instances", async ()
     await expect(first.get()).resolves.toEqual(remote);
     const other = {flag: false, endpoint: "other", nested: {a: 3}};
     fetchMock.mockResolvedValue(response(other));
-    await expect(service({url: "https://other.example/config.json"}).get()).resolves.toEqual(other);
+
+    await expect(service({url: "https://other.example/config.json"}).get())
+        .resolves.toEqual({...other, nested: {a: 3, b: 2}});
+
     await expect(first.get()).resolves.toEqual(remote);
     expect(fetchMock).toHaveBeenCalledTimes(2);
 });

@@ -48,9 +48,9 @@
       "types": "./dist-types/api.d.ts",
       "default": "./plugin/api.ts"
     },
-    "./hooks": {
-      "types": "./dist-types/hooks.d.ts",
-      "default": "./plugin/hooks.ts"
+    "./react": {
+      "types": "./dist-types/react/index.d.ts",
+      "default": "./plugin/react/index.ts"
     },
     "./service": {
       "types": "./dist-types/service/index.d.ts",
@@ -66,13 +66,15 @@
     "test": "jest --config jest.config.cjs --runInBand",
     "test:coverage": "jest --config jest.config.cjs --coverage --runInBand",
     "test:watch": "jest --config jest.config.cjs --watch",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit && tsc -p tests/types/tsconfig.json --noEmit",
     "types": "node -e \"require('node:fs').rmSync('dist-types', {force: true, recursive: true})\" && tsc -p tsconfig.build.json",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
     "@addon-core/browser": "^0.8.0",
-    "@addon-core/storage": "^0.7.0"
+    "@addon-core/storage": "^0.7.0",
+    "dot-prop": "^10.2.0",
+    "type-fest": "^5.9.0"
   },
   "devDependencies": {
     "@rspack/core": "1.7.12",

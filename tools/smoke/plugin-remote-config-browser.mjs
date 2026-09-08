@@ -13,7 +13,7 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const expectedRemote = {flag: true, label: "remote", nested: {a: 10, b: 20}};
-const expectedPartial = {flag: false, label: "partial", nested: {a: 30}};
+const expectedPartial = {flag: false, label: "partial", nested: {a: 30, b: 2}};
 const requestCookies = [];
 let mode = "remote";
 
@@ -67,7 +67,15 @@ const readConfig = async evaluate => {
     return waitFor(async () => {
         const text = await evaluate(`document.getElementById('remote-config-output')?.textContent`);
 
-        return text && text !== "pending" ? JSON.parse(text) : undefined;
+        if (!text || text === "pending") {
+            return undefined;
+        }
+
+        const config = JSON.parse(text);
+        const selected = JSON.parse(await evaluate(`document.getElementById('remote-config-selection').textContent`));
+        equal(selected, {value: config.nested.b, enabled: config.flag}, "Proxy API dot path and selector");
+
+        return config;
     }, "remote config response");
 };
 
@@ -86,6 +94,21 @@ const scenarios = async (evaluate, restart, inspect) => {
 
     assert(await evaluate("document.cookie.includes('remote_config_session=smoke')"), "Test site cookie is missing");
     equal(await readConfig(evaluate), expectedRemote, "Initial configuration");
+
+    await waitFor(async () => await evaluate(
+        `document.getElementById('remote-config-hook-path')?.textContent === '10'`
+    ) || undefined, "React dot path to receive the remote configuration");
+
+    const requestsBeforeSwitch = requestCookies.length;
+    await evaluate(`document.getElementById('switch-remote-config-path').click(); true`);
+
+    await waitFor(async () => await evaluate(
+        `document.getElementById('remote-config-hook-path')?.textContent === '20' &&
+         document.getElementById('remote-config-hook')?.textContent === 'selected: remote'`
+    ) || undefined, "React path and selector to change on rerender");
+
+    await delay(100);
+    equal(requestCookies.length, requestsBeforeSwitch, "Changing a selection must not refetch config");
     await inspect?.();
     mode = "failure";
     equal(await readConfig(evaluate), expectedRemote, "Configuration during a failed refresh");
@@ -138,6 +161,13 @@ const runChrome = async (extensionDir, siteUrl) => {
             const attachedWorker = await rpc.send("Target.attachToTarget", {targetId: current.id, flatten: true});
             const direct = await evaluateChrome(rpc, attachedWorker.sessionId, "remoteConfigSmokeRead()");
             equal(direct, expectedRemote, "Direct background service call");
+
+            equal(await evaluateChrome(rpc, attachedWorker.sessionId, "remoteConfigSmokeRead('nested.b')"),
+                20, "Direct background dot path");
+
+            equal(await evaluateChrome(rpc, attachedWorker.sessionId, "remoteConfigSmokeRead(config => config.flag)"),
+                true, "Direct background selector");
+
             const values = await evaluateChrome(rpc, attachedWorker.sessionId, "chrome.storage.local.get(null)");
             equal(Object.keys(values), ["@adnbn/plugin-remote-config:cache"], "Only one namespaced local record");
             equal(values["@adnbn/plugin-remote-config:cache"].config, expectedRemote, "Plain local cache");

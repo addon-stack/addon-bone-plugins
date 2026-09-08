@@ -4,6 +4,7 @@ import {getRemoteConfigOptions} from "../api";
 import {isConfig} from "../options";
 import {PluginName, type RemoteConfig, type ResolvedRemoteConfigOptions} from "../types";
 import Cache from "./Cache";
+import {mergeConfig} from "./merge";
 
 class RemoteConfigService {
     private pending?: Promise<RemoteConfig>;
@@ -29,7 +30,8 @@ class RemoteConfigService {
     }
 
     private current(): RemoteConfig {
-        return {...this.options.config, ...this.cache?.config};
+        // Merging shares untouched branches with defaults and cache; only get() exposes a cloned result.
+        return mergeConfig(this.options.config, this.cache?.config) as RemoteConfig;
     }
 
     private async load(): Promise<RemoteConfig> {
@@ -45,7 +47,7 @@ class RemoteConfigService {
             return this.current();
         }
 
-        let config: RemoteConfig;
+        let config: Record<string, unknown>;
 
         try {
             config = await this.fetch(cache.url);
@@ -61,7 +63,7 @@ class RemoteConfigService {
         return this.current();
     }
 
-    private async fetch(url: string): Promise<RemoteConfig> {
+    private async fetch(url: string): Promise<Record<string, unknown>> {
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout> | undefined;
 

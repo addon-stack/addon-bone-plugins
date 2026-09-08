@@ -33,7 +33,7 @@ const smokeDocument = mode => `<!doctype html>
     </form>
     <p>Choose Full config and read it, then switch to HTTP 503, Invalid JSON, Array response, or Slow response.
        The extension should keep the previous working config.</p>
-    <p>Partial config merges with defaults only. Its nested value replaces the whole default nested object.
+    <p>Partial config merges deeply with defaults: nested.a becomes 30 and nested.b keeps its default value of 2.
        Empty object resets the result to defaults.</p>
     <p>The fixture uses a 1-minute TTL, a 1-second timeout, and a 100-ms retry delay. Read config returns the
        cached result during that minute. Once it expires, the next read requests the selected server response.

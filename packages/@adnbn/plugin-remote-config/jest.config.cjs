@@ -26,7 +26,7 @@ module.exports = {
         "^@addon-core/storage$": "<rootDir>/node_modules/@addon-core/storage/dist/index.js",
     },
     transformIgnorePatterns: [
-        "/node_modules/(?!\\.pnpm/(?:@addon-core\\+storage@|await-lock@)|@addon-core/storage|await-lock/)",
+        "/node_modules/(?!\\.pnpm/(?:@addon-core\\+storage@|dot-prop@)|@addon-core/storage|dot-prop/)",
     ],
     collectCoverageFrom: ["plugin/**/*.ts"],
     coverageDirectory: "coverage",
