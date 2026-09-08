@@ -10,9 +10,8 @@ updates fail.
 
 ## Purpose
 
-Fetch configuration through an Addon Bone background service and read it from background scripts, content scripts,
-extension pages, or React components. Successful responses are merged with your defaults. Failed updates retain the
-last working configuration, including after a browser or service-worker restart when persistence is available.
+Read remote JSON from background scripts, content scripts, extension pages, or React components. The background
+service merges responses with defaults and keeps the last working configuration when updates fail.
 
 ## Installation
 
@@ -34,120 +33,78 @@ export default defineConfig({
 });
 ```
 
-Read the current configuration from any extension layer:
+Read the configuration from any extension layer:
 
 ```ts
 import {getRemoteConfig} from "@adnbn/plugin-remote-config/api";
 
-const config = await getRemoteConfig<{featureFlag: boolean}>();
+const config = await getRemoteConfig();
 ```
 
 ## Permissions
 
-The plugin service declares `storage` on Chrome and Firefox, in both Manifest V2 and V3. The manifest hook adds host
-access for the resolved HTTP(S) configuration endpoint. It adds no `tabs`, `scripting`, `cookies`, `alarms`, or
-`unlimitedStorage` permission and does not request optional permissions at runtime.
+On Chrome and Firefox MV2/MV3, the plugin adds `storage` and host access for the resolved endpoint. It adds no other
+permissions or optional permission requests. With no endpoint, only `storage` is declared and reads return defaults.
 
 ### `storage`
 
-The service saves the remote JSON response, its source URL, last successful update time, and retry deadline in
-`storage.local`, with namespace `@adnbn/plugin-remote-config` and key `cache`. The native storage key is
-`@adnbn/plugin-remote-config:cache`. Data is not encrypted or synchronized. The saved response is merged with the
-current build's defaults when read. One storage write updates the accepted response and its metadata together.
+Caches the response, URL, and refresh metadata in ordinary `storage.local` under `@adnbn/plugin-remote-config:cache`.
+The cache is neither encrypted nor synchronized.
 
 Suggested store justification:
 
 ```text
-The storage permission is used to cache the extension's remote configuration and update metadata locally. This lets
-configured features keep working when the configuration endpoint is unavailable and avoids repeated failed requests.
-The cache is not synchronized between devices.
+The storage permission caches remote configuration and refresh metadata locally so configured features keep working
+when the server is unavailable. This data is not synchronized between devices.
 ```
 
-### Automatically added host access
+### Endpoint host access
 
-The plugin adds the endpoint's scheme and hostname as a match pattern, for example `https://example.com/*`. Addon Bone
-emits it in `host_permissions` for MV3 and in `permissions` for MV2. Query parameters and URL credentials do not belong
-in permission patterns. Browser network host access applies to the host, rather than only the JSON file's path.
+An endpoint such as `https://example.com/config.json` adds `https://example.com/*`: `host_permissions` in MV3 and
+`permissions` in MV2. Access covers the host, not just the JSON path.
 
 Suggested store justification:
 
 ```text
-Host access to the configuration server is used by the extension's background service to retrieve JSON configuration
-for its configured features. The response supplies data and settings, not executable extension code.
+Host access lets the extension's background service retrieve JSON settings from its configuration server to configure
+its features. The response contains data, not executable code.
 ```
 
-Adapt the justification to describe your extension's actual features. Requests use `credentials: "omit"` by default.
-For a cookie-authenticated endpoint, set `credentials: "include"`; browser cookie restrictions still apply.
+### Consumer-owned access
 
-### Consumer-owned host access
-
-The plugin adds access to its own endpoint. Other hosts used by the consumer remain the consumer's responsibility,
-including any additional origins required by redirects. A custom CSP must permit the request through `connect-src`
-or its applicable fallback. With no resolved endpoint, no host permission is added; the service still declares
-`storage`, while reads return defaults without storage or network access.
+Other hosts, including redirect destinations, require consumer-owned access. Custom CSP must permit the request.
+Adapt the store justifications if your extension uses these permissions for additional features.
 
 ## How it works
 
-1. The `startup` hook resolves options and environment values once when the builder starts. The manifest and runtime
-   share these values, including during watch rebuilds.
-2. The background service reads the persisted configuration for the same endpoint URL.
-3. A fresh cached response is merged with defaults and returned without a request.
-4. Once TTL expires, the next read attempts an update. Concurrent reads share that attempt.
-5. A successful JSON object replaces the previous remote response and is merged shallowly with defaults.
-6. A failed request returns the last working configuration; defaults are used when no working response is available.
-7. Failed attempts wait for the configured retry delay before another read can retry. No periodic polling is started.
+- Options and environment values are resolved once at builder startup.
+- Reads use the same-URL cache until TTL expires; the next read refreshes it. Concurrent reads share one request.
+- Successful responses merge deeply with the original defaults, never with previous remote values. Missing fields
+  keep defaults; arrays replace whole; `false`, `0`, `""`, and `null` are preserved. An empty object restores defaults.
+- Failed refreshes retain the last working response, or defaults if none exists. Retries respect `retryDelay`.
+  There is no background polling or maximum stale-cache age.
 
-TTL controls freshness, not whether a cached configuration is usable. Failed updates do not advance the success time.
-The timeout covers both the request and reading its JSON body. A storage read failure still allows a network request;
-a write failure retains a successful result in memory, with persistence available again on a later successful write.
-
-### Partial responses
-
-Every successful response uses `{...defaults, ...response}`. Previous remote values do not participate in that merge.
-An empty object is a valid successful response and restores the defaults. Nested objects and arrays are replaced
-whole; explicit `false`, `0`, empty strings, and `null` are retained.
-
-For example, defaults `{enabled: false, label: "default"}` and a previous response `{enabled: true, label: "old"}`
-produce `{enabled: false, label: "new"}` after a successful response `{label: "new"}`. A failed request retains the
-previous working result instead.
+For example, defaults `{banner: {enabled: false, text: "default"}}` plus `{banner: {text: "new"}}` produce
+`{banner: {enabled: false, text: "new"}}`.
 
 ## Options
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `url` | `"REMOTE_CONFIG_URL"` | HTTP(S) URL or environment variable name; an empty string disables the endpoint. |
-| `config` | `{}` | Default JSON object, shallowly merged with each accepted response. |
-| `ttl` | `1440` | Freshness in minutes. Zero refreshes on each read, subject to failed-request retry delay. |
-| `timeout` | `10000` | Request and JSON-body timeout in milliseconds; must be positive and within browser timer limits. |
-| `retryDelay` | `60000` | Delay after a failed attempt, in milliseconds. Zero permits the next read to retry immediately. |
-| `credentials` | `"omit"` | Fetch credentials policy: `"omit"`, `"same-origin"`, or `"include"`. |
+| `url` | `"REMOTE_CONFIG_URL"` | HTTP(S) URL or environment variable name. `""` disables the endpoint. |
+| `config` | Required | Defaults covering all required fields in your `RemoteConfig` schema. |
+| `ttl` | `1440` | Cache freshness in minutes. Zero refreshes on every read, subject to retry delay. |
+| `timeout` | `10000` | Request and JSON-body timeout in milliseconds. Must be positive and within timer limits. |
+| `retryDelay` | `60000` | Delay after a failed refresh, in milliseconds. Zero disables it. |
+| `credentials` | `"omit"` | `"omit"`, `"same-origin"`, or `"include"`; use `"include"` for cookie authentication. |
 
-Each option also accepts a build-time getter. Numeric options must be finite; TTL and retry delay must be
-non-negative. Missing or empty environment variables disable the endpoint and produce a warning at startup.
-An explicit empty URL or a getter returning `undefined` disables it without a warning. URL changes invalidate the
-previous source's cache and retry deadline. Defaults are read from the current build.
+Each option accepts a build-time getter. Numbers must be finite; TTL and retry delay cannot be negative.
+A missing environment variable warns at startup and disables fetching. An empty URL or a URL getter returning
+`undefined` disables it silently. Changing the URL invalidates the previous cache.
 
-## React
+## TypeScript and selection
 
-React is an optional peer used by `/hooks`; this plugin does not require `react-dom` as a peer. Addon Bone may still
-require both packages independently.
-
-```tsx
-import {useRemoteConfig} from "@adnbn/plugin-remote-config/hooks";
-
-function Feature() {
-    const enabled = useRemoteConfig<{featureFlag: boolean}, boolean>(config => config.featureFlag);
-
-    return <span>{enabled ? "Enabled" : "Disabled"}</span>;
-}
-```
-
-The hook starts with defaults and requests the current configuration when mounted. It supports an optional selector
-and ignores results after unmounting. It does not subscribe to later service updates or poll the endpoint.
-
-## TypeScript
-
-Augment the public interface once in a declaration file included by your consumer:
+Augment the public interface in a declaration file included by your project:
 
 ```ts
 import "@adnbn/plugin-remote-config";
@@ -159,25 +116,47 @@ declare module "@adnbn/plugin-remote-config" {
 }
 ```
 
-Both `getRemoteConfig()` and `useRemoteConfig()` then use the augmented interface. `getRemoteConfigOptions()` remains
-available from `/api` to read build-time options. `/service` remains the background service entrypoint.
+`getRemoteConfig` accepts no argument, a typed dot path, or a selector. It also awaits async selectors:
 
-## Guarantees and limitations
+```ts
+const config = await getRemoteConfig(); // RemoteConfig
+const enabled = await getRemoteConfig("featureFlag"); // boolean
+const label = await getRemoteConfig(config => config.featureFlag ? "on" : "off");
+```
 
-- Requests and persisted state are owned by one background service. Direct callers receive independent result objects.
-- The response must be a JSON object. TypeScript types do not validate application-specific field values at runtime.
-- Cached data can remain stale indefinitely while updates fail. There is no maximum offline lifetime.
-- If storage is unavailable, only the current service instance can retain successful values. A restart then requires
-  working storage, a successful request, or defaults.
-- Retry deadlines are persisted on a best-effort basis. Storage failures or manual cache clearing can allow another
-  attempt after a service restart.
-- **Breaking storage change:** older encrypted and non-namespaced caches are not read or migrated. When upgrading
-  from those versions, defaults are used until the first successful remote request. Only the ordinary namespaced
-  `cache` record is used.
-- **Breaking request change:** credentials now default to `"omit"`. Set `credentials: "include"` to retain cookie
-  authentication used by previous versions.
-- Standalone source checking uses a development-only service registry declaration. Consumers receive their real
-  service registry from Addon Bone; the development declaration is excluded from the npm tarball.
+Defaults must include all required nested fields; optional fields may be omitted. Paths support numeric array indices
+(`banners.0.title`) and up to ten recursive steps; broad, deep schemas can increase type-checking time. Optional or
+nullable branches and unbounded array indices can yield `undefined`.
 
-Development, testing, and release infrastructure lives in the
-[Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).
+Use selectors for keys containing dots, brackets, or backslashes, reserved keys (`__proto__`, `prototype`,
+`constructor`), and values typed as `unknown` or `any`. Selection is local and always reads the full service result.
+`getRemoteConfigOptions()` exposes resolved build-time options; `/service` is the framework's background entrypoint.
+
+## React
+
+React is an optional peer, used only by `/react`. The hook accepts the same paths and selectors:
+
+```tsx
+import {useRemoteConfig} from "@adnbn/plugin-remote-config/react";
+
+function Feature() {
+    const enabled = useRemoteConfig("featureFlag");
+
+    return <span>{enabled ? "Enabled" : "Disabled"}</span>;
+}
+```
+
+The hook starts with defaults, fetches on mount, and ignores results after unmounting. Changing the selection uses
+current state without refetching. Selectors must be synchronous; the hook neither polls nor subscribes to updates.
+
+## Limits and upgrading
+
+- TypeScript checks defaults, not server data. Responses must be JSON objects with values matching your schema;
+  explicit `null` replaces a default, and replacement array elements must contain their required fields.
+- Results are independent copies. Network and storage failures are handled separately; failed persistence leaves an
+  in-memory cache, but configuration and retry metadata may be lost after a service-worker restart.
+- **Breaking changes:** use `/react` instead of `/hooks`, provide complete defaults, and augment `RemoteConfig` instead
+  of overriding it with a generic. Old caches are not migrated. Credentials now default to `"omit"`.
+
+For development, testing, and releases, see the
+[monorepo contributing guide](https://github.com/addon-stack/addon-bone-plugins/blob/main/CONTRIBUTING.md).

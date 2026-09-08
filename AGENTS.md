@@ -18,6 +18,7 @@
 ## Tests
 
 - Unit tests use Jest in the Node environment. Test transforms must not produce or publish package artifacts.
+- Remote-config keeps isolated compiler tests in `tests/types`; its `typecheck` runs source, Jest, and type-test programs.
 - Browser-facing tests use the published `@addon-core/browser/testing` harness and fixtures. Keep browser wrappers
   and injection packages real; configure native results/errors through the harness instead of mocking those modules.
 - Restore harness globals after every test. URL queries and host permissions use the harness state by default;
@@ -47,15 +48,19 @@
 
 ## Remote configuration
 
-- A successful JSON object is shallowly merged with defaults only. Do not merge successful responses with previous
-  remote values or introduce deep merging. Empty objects and explicit falsy values are valid responses.
+- Defaults are required and must cover the consumer's augmented `RemoteConfig` schema. Successful JSON objects merge
+  deeply with these defaults only; never merge a new response with previous remote values. Arrays are replaced whole.
+  Empty objects and explicit falsy values are valid responses; explicit `null` replaces the corresponding default.
 - Failed refreshes retain the last working response for the same URL. TTL controls freshness, not cache usability.
 - New configuration, URL, success time, and retry metadata use one ordinary `storage.local` record with namespace
   `@adnbn/plugin-remote-config` and key `cache`.
   This is an intentional breaking change: use no secure-storage APIs and do not add legacy cache migration paths.
 - Keep network and storage failures independent, share concurrent refreshes, and bound requests and retry frequency.
 - Requests default to `credentials: "omit"`; cookie-authenticated endpoints must explicitly select `"include"`.
-- Keep the four public exports and declaration-merging contract. Addon Bone owns compilation and service transport.
+- Keep public exports `.`, `/api`, `/react`, and `/service`, with the declaration-merging contract. Addon Bone owns
+  compilation and service transport. Preserve the service get method's public import reference in JSDoc.
+- Selectors and typed dot paths are resolved locally in the API and React adapter using the shared selection helper.
+  The service returns full configurations; selector functions must not cross the service transport.
 
 ## Workspace and releases
 

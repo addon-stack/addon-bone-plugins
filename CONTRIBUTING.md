@@ -74,6 +74,7 @@ The checks cover separate boundaries:
 - ESLint formats and validates source and repository conventions.
 - `pnpm audit` blocks high- and critical-severity advisories in the development dependency graph.
 - TypeScript checks source and tests, then emits public declarations.
+- Remote-config's `typecheck` runs three programs: source, Jest tests, and isolated compiler tests in `tests/types`.
 - Shared helpers under `tests/helpers` use `tests/tsconfig.json` and the root Chrome/Node types for editor support.
   `pnpm typecheck:tests` checks them directly and also runs within `pnpm typecheck`, `pnpm check`, and `pnpm verify`.
 - Jest validates package behavior and repository tooling.
@@ -118,7 +119,7 @@ validation and does not change the local fixtures' generated files.
 The remote-config consumer installs a freshly packed tarball and builds Chrome/Firefox MV2/MV3 with the Addon Bone
 version pinned in [the fixture manifest](tests/fixtures/plugin-remote-config-consumer/package.json). Its React fixture
 declares `scheduler` explicitly because the framework resolves React dependencies through consumer aliases. The
-package itself only imports React in its hooks entrypoint. Additional builds exercise the default
+package itself only imports React in its `/react` entrypoint. Additional builds exercise the default
 `REMOTE_CONFIG_URL` environment variable both when set and when missing, including the startup warning.
 
 After each build, the consumer checks the generated service registry against its augmented `RemoteConfig` interface
@@ -127,7 +128,9 @@ it causes the framework parser to inline the package's empty base interface as `
 
 `pnpm check:consumer` and `pnpm check:browser` run both migrated packages. For a narrow runtime check, use
 `node tools/smoke/plugin-remote-config-browser.mjs`; it starts an isolated local endpoint and disposable browser
-profiles. It tests failed refreshes, recovery, partial responses, the React hook, and Chrome service-worker restarts.
+profiles. It tests failed refreshes, recovery, deep partial responses, typed dot-path and selector access, React
+selection changes without refetching, and Chrome service-worker restarts. The consumer type checks also reject
+invalid paths and incomplete defaults against its augmented schema.
 
 `pnpm build:consumer` writes remote-config builds under `tests/fixtures/plugin-remote-config-consumer/dist`. Set
 `REMOTE_CONFIG_SMOKE_URL` to a test endpoint when creating manual builds; its default is
@@ -146,11 +149,12 @@ The mock server uses the fixture's default endpoint, `http://127.0.0.1:8765/conf
 `tests/fixtures/plugin-remote-config-consumer/dist/smoke-chrome-mv3` as an unpacked Chrome extension, or load
 `tests/fixtures/plugin-remote-config-consumer/dist/smoke-firefox-mv2/manifest.json` as a temporary Firefox add-on.
 Open `http://127.0.0.1:8765/` and reload after installing the extension. The page offers response modes, and the
-extension adds a **Read config** button, a JSON result, and a React label.
+extension adds a **Read config** button, full and selected JSON results, a React label, and a **Switch selected field**
+button. Switching the React field updates both its dot path and selector without making another request.
 
 Read **Full config**, then select **HTTP 503**, **Invalid JSON**, **Array response**, or **Slow response** and read
 again: the previous working configuration should remain available. **Partial config** merges only with defaults
-and replaces the nested object; **Empty object** returns defaults. The fixture uses a 1-minute TTL, a 1-second
+and deeply fills missing nested fields from them; **Empty object** returns defaults. The fixture uses a 1-minute TTL, a 1-second
 timeout, and a 100-ms retry delay. Reads within that minute return the cached result; after expiry, the next read
 requests the selected server response. The React label is read on page mount; the button makes an explicit API
 read. Stop the server with `Ctrl+C`. `pnpm serve:consumer` remains the content-script test page for `plugin-reg-cs`.
