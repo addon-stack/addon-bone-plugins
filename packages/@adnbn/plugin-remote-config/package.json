@@ -29,10 +29,7 @@
     "url": "https://github.com/addon-stack/addon-bone-plugins/issues"
   },
   "license": "MIT",
-  "author": "Addon Stack <addonbonedev@gmail.com>",
-  "contributors": [
-    "Anjey Tsibylskij (https://github.com/atldays)"
-  ],
+  "author": "Anjey Tsibylskij (https://github.com/atldays)",
   "type": "module",
   "files": [
     "plugin",
