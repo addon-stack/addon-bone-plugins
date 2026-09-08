@@ -1,6 +1,6 @@
 import {spawn, spawnSync} from "node:child_process";
-import {readFileSync, rmSync} from "node:fs";
-import {mkdtemp} from "node:fs/promises";
+import {readFileSync} from "node:fs";
+import {mkdtemp, rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
@@ -281,7 +281,7 @@ const runChromeSmoke = async (extensionDir, siteUrl) => {
         }
 
         await stopProcess(process);
-        rmSync(profile, {force: true, recursive: true});
+        await rm(profile, {force: true, recursive: true, maxRetries: 5, retryDelay: 200});
     }
 };
 
@@ -376,7 +376,7 @@ const runFirefoxSmoke = async (extensionDir, siteUrl) => {
         }
 
         await stopProcess(process);
-        rmSync(profile, {force: true, recursive: true});
+        await rm(profile, {force: true, recursive: true, maxRetries: 5, retryDelay: 200});
     }
 };
 
@@ -409,6 +409,6 @@ try {
     }
 
     if (temporaryRoot) {
-        rmSync(temporaryRoot, {force: true, recursive: true});
+        await rm(temporaryRoot, {force: true, recursive: true, maxRetries: 5, retryDelay: 200});
     }
 }
