@@ -17,6 +17,51 @@ const messagesFor = async (source, filePath) => {
 };
 
 describe("ESLint project configuration", () => {
+    test.each(["src/constants.ts", "tools/constants.mjs"])(
+        "rejects uppercase constants in %s without renaming them automatically",
+        async filePath => {
+            const source = 'export const PLUGIN_NAME = "plugin";\nexport const TIMEOUT = 1000;\n';
+            const [checked] = await checker.lintText(source, {filePath});
+
+            expect(checked.messages.map(message => message.ruleId)).toEqual([
+                "no-restricted-syntax",
+                "no-restricted-syntax",
+            ]);
+
+            const [fixed] = await fixer.lintText(source, {filePath});
+            expect(fixed.messages).toEqual(checked.messages);
+            expect(fixed.output).toBeUndefined();
+        }
+    );
+
+    test.each(["src/constants.ts", "tools/constants.mjs"])(
+        "accepts PascalCase constants and camelCase local bindings in %s",
+        async filePath => {
+            const source = [
+                'export const PluginName = "plugin";',
+                "export const RetryDelay = 1000;",
+                "export const endpoint = process.env.REMOTE_CONFIG_URL;",
+                "",
+            ].join("\n");
+
+            const [result] = await checker.lintText(source, {filePath});
+            expect(result.messages).toEqual([]);
+        }
+    );
+
+    test("preserves uppercase names from external imports and destructuring", async () => {
+        const source = [
+            'import {REMOTE_CONFIG_URL} from "external-config";',
+            "",
+            "export const {HTTP_PORT} = process.env;",
+            "export const endpoint = REMOTE_CONFIG_URL;",
+            "",
+        ].join("\n");
+
+        const [result] = await checker.lintText(source, {filePath: "tools/constants.mjs"});
+        expect(result.messages).toEqual([]);
+    });
+
     test("checks formatting without editing and fixes blank lines and whitespace idempotently", async () => {
         const source = [
             "export function collect (items: string[]) {",

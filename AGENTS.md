@@ -93,6 +93,8 @@
 
 ## Validation
 
+- Shared named constants use PascalCase, such as `PluginName`, rather than `UPPER_CASE`. Local bindings may use
+  camelCase. Keep internal constants out of public package entrypoints.
 - Run the narrow package check while iterating and `pnpm verify` before handoff.
 - Treat unit tests, package-shape checks, consumer builds, and real-browser runtime tests as separate evidence.
 - Keep mass formatting isolated from behavioral changes so imported history remains useful.

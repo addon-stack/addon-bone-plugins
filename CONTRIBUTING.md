@@ -16,6 +16,9 @@ range and runs the same workspace verification expected by CI.
 Plugins publish raw TypeScript plus generated declarations. Do not add compiled JavaScript, a production bundler, or a
 new public export without documenting and testing the package contract.
 
+Use PascalCase for shared named constants, such as `PluginName`, and camelCase for local bindings. ESLint rejects
+UPPER_CASE `const` declarations. Keep internal constants out of public package entrypoints.
+
 ## Package documentation
 
 Every public package README follows the same concise, developer-facing order:

@@ -71,6 +71,11 @@ export default tseslint.config(
         },
         rules: {
             curly: ["error", "all"],
+            "no-restricted-syntax": ["error", {
+                selector: "VariableDeclaration[kind='const'] > VariableDeclarator > " +
+                    "Identifier.id[name=/^[A-Z][A-Z0-9_]*$/]",
+                message: "Use PascalCase for named constants (for example, PluginName); UPPER_CASE is not allowed.",
+            }],
             "project/padding-around-multiline": "error",
             "@stylistic/array-bracket-spacing": ["error", "never"],
             "@stylistic/arrow-parens": ["error", "as-needed"],
