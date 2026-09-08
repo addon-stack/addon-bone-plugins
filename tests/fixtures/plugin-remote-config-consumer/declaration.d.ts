@@ -8,6 +8,8 @@ declare module "@adnbn/plugin-remote-config" {
         optional?: {value: number};
         nullable?: {value: number} | null;
         items?: {title: string}[];
+        banners: {title: string}[];
+        labels: Record<string, string>;
         tuple?: readonly [string, {enabled: boolean}];
         deep?: {a: {b: {c: {d: {e: {f: number}}}}}};
         "dotted.key"?: string;

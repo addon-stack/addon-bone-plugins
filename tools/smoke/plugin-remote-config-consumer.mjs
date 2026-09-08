@@ -191,7 +191,7 @@ export default defineConfig({
     name: "Remote Config Environment Smoke",
     description: "Validates build-time environment resolution.",
     version: "1.0.0",
-    plugins: [remoteConfig({config: {flag: false, label: "default", nested: {a: 1, b: 2}}})],
+    plugins: [remoteConfig()],
 });
 `);
 
@@ -200,6 +200,17 @@ export default defineConfig({
         buildAndInspect({browser: "chrome", manifestVersion: 3, configUrl: null, env: {REMOTE_CONFIG_URL: undefined}});
     } finally {
         writeFileSync(configPath, originalConfig);
+    }
+
+    buildAndInspect({browser: "chrome", manifestVersion: 3, env: {REMOTE_CONFIG_SMOKE_DEFAULTS: "partial"}});
+
+    for (const [browser, manifestVersion] of [["chrome", 3], ["firefox", 2]]) {
+        const outputDir = buildAndInspect({
+            browser, manifestVersion,
+            env: {REMOTE_CONFIG_SMOKE_DEFAULTS: "none", REMOTE_CONFIG_SMOKE_TIMEOUT: "10000"},
+        });
+
+        cpSync(outputDir, path.join(consumerDir, "no-defaults", path.basename(outputDir)), {recursive: true});
     }
 
     const buildDirectories = [
@@ -214,7 +225,7 @@ export default defineConfig({
     console.log(
         "Verified packed @adnbn/plugin-remote-config builds and generated service types " +
         `with Addon Bone ${frameworkVersion} in Chrome and Firefox MV3/MV2, ` +
-        "including resolved and missing environment variables."
+        "including omitted options, partial and absent defaults, and resolved and missing environment variables."
     );
 
     if (process.argv.includes("--keep-output")) {

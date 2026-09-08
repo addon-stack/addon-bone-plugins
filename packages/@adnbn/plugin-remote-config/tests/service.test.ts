@@ -58,6 +58,30 @@ it("uses defaults without accessing storage or the network when URL is disabled"
     expect(read).not.toHaveBeenCalled();
 });
 
+it("returns an empty object without defaults or an endpoint", async () => {
+    const read = jest.spyOn(harness.storage.api.local, "get");
+    await expect(service({config: undefined, url: undefined}).get()).resolves.toEqual({});
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalled();
+});
+
+it("merges partial nested defaults with each new response only", async () => {
+    const instance = service({config: {nested: {a: 1}}, ttl: 0});
+    fetchMock.mockResolvedValue(response({flag: false, nested: {b: 2}}));
+    await expect(instance.get()).resolves.toEqual({flag: false, nested: {a: 1, b: 2}});
+    fetchMock.mockResolvedValue(response({nested: {b: 3}}));
+    await expect(instance.get()).resolves.toEqual({nested: {a: 1, b: 3}});
+    fetchMock.mockResolvedValue(response({}));
+    await expect(instance.get()).resolves.toEqual({nested: {a: 1}});
+});
+
+it("returns an empty object after a successful empty response without defaults", async () => {
+    const instance = service({config: undefined, ttl: 0});
+    await expect(instance.get()).resolves.toEqual(remote);
+    fetchMock.mockResolvedValue(response({}));
+    await expect(instance.get()).resolves.toEqual({});
+});
+
 it("omits request credentials by default", async () => {
     await service().get();
     expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({credentials: "omit"}));
@@ -144,18 +168,20 @@ it.each(["offline", "http", "json", "array", "null", "string", "number", "boolea
     }
 );
 
-it("falls back to defaults before the first success, then recovers when the retry delay expires", async () => {
-    fetchMock.mockRejectedValue(new Error("offline"));
-    const instance = service();
-    await expect(instance.get()).resolves.toEqual(defaults);
-    fetchMock.mockResolvedValue(response(remote));
-    now += 59_999;
-    await expect(instance.get()).resolves.toEqual(defaults);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    now++;
-    await expect(instance.get()).resolves.toEqual(remote);
-    expect(stored()).toEqual({url, config: remote, updatedAt: now});
-});
+it.each([undefined, {nested: {a: 1}}, defaults])(
+    "falls back to supplied defaults %j before the first success, then recovers", async config => {
+        fetchMock.mockRejectedValue(new Error("offline"));
+        const instance = service({config});
+        await expect(instance.get()).resolves.toEqual(config ?? {});
+        fetchMock.mockResolvedValue(response(remote));
+        now += 59_999;
+        await expect(instance.get()).resolves.toEqual(config ?? {});
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        now++;
+        await expect(instance.get()).resolves.toEqual(remote);
+        expect(stored()).toEqual({url, config: remote, updatedAt: now});
+    }
+);
 
 it("shares failed attempts and retains retry delay across service restarts", async () => {
     fetchMock.mockRejectedValue(new Error("offline"));
@@ -183,17 +209,17 @@ it.each([true, false])("skips retry writes with zero delay and an existing cache
     expect(stored()).toEqual(hasCache ? record : undefined);
 });
 
-it("retains stale configuration across service restarts", async () => {
-    await service().get();
+it.each([undefined, defaults])("retains stale configuration across restarts with defaults %j", async config => {
+    await service({config}).get();
     now += 86_400_000;
     fetchMock.mockRejectedValue(new Error("offline"));
-    await expect(service().get()).resolves.toEqual(remote);
+    await expect(service({config}).get()).resolves.toEqual(remote);
 });
 
 it("does not carry cached values or retry deadlines across different sources", async () => {
     await seed({url: "https://old.example/config.json", config: remote, updatedAt: now, retryAt: now + 60_000});
     fetchMock.mockRejectedValue(new Error("offline"));
-    await expect(service().get()).resolves.toEqual(defaults);
+    await expect(service({config: undefined}).get()).resolves.toEqual({});
     expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 

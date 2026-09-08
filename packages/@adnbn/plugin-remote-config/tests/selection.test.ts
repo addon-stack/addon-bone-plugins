@@ -11,6 +11,12 @@ it("returns the complete configuration when no selection is supplied", () => {
     expect(selectConfig(config)).toBe(config);
 });
 
+it("returns undefined for an absent branch in empty or partial defaults", () => {
+    expect(selectConfig({}, "banner.enabled" as RemoteConfigPath)).toBeUndefined();
+    expect(selectConfig({banner: {}}, "banner.enabled" as RemoteConfigPath)).toBeUndefined();
+    expect(selectConfig({}, value => value)).toEqual({});
+});
+
 it.each([
     ["banner.enabled", false], ["banner.text", ""], ["banner.count", 0], ["banner.nullable", null],
     ["banner", config.banner], ["items.0.title", "first"], ["items.1.title", undefined],

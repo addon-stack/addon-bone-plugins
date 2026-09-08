@@ -48,9 +48,14 @@
 
 ## Remote configuration
 
-- Defaults are required and must cover the consumer's augmented `RemoteConfig` schema. Successful JSON objects merge
-  deeply with these defaults only; never merge a new response with previous remote values. Arrays are replaced whole.
+- Defaults are optional and deeply partial. Missing defaults normalize to `{}`; with no working response, full reads
+  return defaults or `{}`, and missing dot paths return `undefined`. Successful JSON objects merge deeply with these
+  defaults only; never merge a new response with previous remote values. Arrays are replaced whole.
   Empty objects and explicit falsy values are valid responses; explicit `null` replaces the corresponding default.
+- Public result types follow the consumer's augmented `RemoteConfig` schema, not the completeness of defaults.
+  Keep type-fest `Get` defaults for optional branches, arrays, and dictionaries; do not widen every result to undefined.
+  Supplied defaults use `PartialDeep` with its default array/tuple behavior. Selectors receive objects but can throw
+  when directly accessing absent nested branches; the interface does not validate runtime data.
 - Failed refreshes retain the last working response for the same URL. TTL controls freshness, not cache usability.
 - New configuration, URL, success time, and retry metadata use one ordinary `storage.local` record with namespace
   `@adnbn/plugin-remote-config` and key `cache`.

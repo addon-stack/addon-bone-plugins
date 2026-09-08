@@ -29,6 +29,11 @@ export type ServiceContractChecks = [
     Expect<Equal<ReturnType<typeof getRemoteConfigOptions>, ResolvedRemoteConfigOptions>>,
     Expect<Equal<ReturnType<typeof getRemoteConfigOptions>["timeout"], number>>,
     Expect<Equal<ReturnType<typeof getRemoteConfigOptions>["retryDelay"], number>>,
+    Expect<Equal<ReturnType<typeof getRemoteConfigOptions>["config"]["nested"], {
+        a?: number;
+        b?: number;
+    } | undefined>>,
+    Expect<Equal<Extract<ReturnType<typeof getRemoteConfigOptions>["config"], undefined>, never>>,
 ];
 
 // This file is type-checked after every real framework build, and is not a runtime entrypoint.
@@ -39,6 +44,8 @@ export function useSelectionTypeChecks(path: string, index: number) {
     const _optional = getRemoteConfig("optional.value");
     const _nullable = getRemoteConfig("nullable.value");
     const _array = getRemoteConfig(`items.${index}.title`);
+    const _requiredArray = getRemoteConfig(`banners.${index}.title`);
+    const _dictionary = getRemoteConfig("labels.save");
     const _tuple = getRemoteConfig("tuple.1.enabled");
     const _deep = getRemoteConfig("deep.a.b.c.d.e.f");
     const _selected = getRemoteConfig(config => config.flag ? "yes" as const : "no" as const);
@@ -48,6 +55,8 @@ export function useSelectionTypeChecks(path: string, index: number) {
     const _hookOptional = useRemoteConfig("optional.value");
     const _hookNullable = useRemoteConfig("nullable.value");
     const _hookArray = useRemoteConfig(`items.${index}.title`);
+    const _hookRequiredArray = useRemoteConfig(`banners.${index}.title`);
+    const _hookDictionary = useRemoteConfig("labels.save");
     const _hookTuple = useRemoteConfig("tuple.1.enabled");
     const _hookSelected = useRemoteConfig(config => config.flag ? 1 as const : 0 as const);
     const _hookObject = useRemoteConfig(config => ({enabled: config.flag}));
@@ -61,6 +70,8 @@ export function useSelectionTypeChecks(path: string, index: number) {
         Expect<Equal<typeof _optional, Promise<number | undefined>>>,
         Expect<Equal<typeof _nullable, Promise<number | undefined>>>,
         Expect<Equal<typeof _array, Promise<string | undefined>>>,
+        Expect<Equal<typeof _requiredArray, Promise<string | undefined>>>,
+        Expect<Equal<typeof _dictionary, Promise<string | undefined>>>,
         Expect<Equal<typeof _tuple, Promise<boolean | undefined>>>,
         Expect<Equal<typeof _deep, Promise<number | undefined>>>,
         Expect<Equal<typeof _selected, Promise<"yes" | "no">>>,
@@ -70,6 +81,8 @@ export function useSelectionTypeChecks(path: string, index: number) {
         Expect<Equal<typeof _hookOptional, number | undefined>>,
         Expect<Equal<typeof _hookNullable, number | undefined>>,
         Expect<Equal<typeof _hookArray, string | undefined>>,
+        Expect<Equal<typeof _hookRequiredArray, string | undefined>>,
+        Expect<Equal<typeof _hookDictionary, string | undefined>>,
         Expect<Equal<typeof _hookTuple, boolean | undefined>>,
         Expect<Equal<typeof _hookSelected, 0 | 1>>,
         Expect<Equal<typeof _hookObject, {enabled: boolean}>>,
@@ -103,18 +116,32 @@ export function useSelectionTypeChecks(path: string, index: number) {
     useRemoteConfig(config => config.flag ? config.label : Promise.resolve(config.label));
     // @ts-expect-error Promise-like return values cannot be awaited during render either.
     useRemoteConfig(config => Promise.resolve(config.label) as PromiseLike<string>);
-    // @ts-expect-error Defaults are required.
     remoteConfig();
-    // @ts-expect-error Defaults are required even with an endpoint.
+    remoteConfig({});
     remoteConfig({url: "https://example.com/config.json"});
-    // @ts-expect-error All required root fields must have defaults.
+    remoteConfig({config: undefined});
+    remoteConfig({config: {}});
     remoteConfig({config: {flag: false}});
-    // @ts-expect-error Nested required fields must also have defaults.
     remoteConfig({config: {flag: false, label: "default", nested: {a: 1}}});
-    // @ts-expect-error Config getters must return complete defaults too.
     remoteConfig({config: () => ({flag: false})});
+    remoteConfig({config: () => ({nested: {a: 1}})});
+    remoteConfig({config: () => undefined});
+    remoteConfig({config: {banners: [{title: "default"}], tuple: ["first", {enabled: false}]}});
 
-    remoteConfig({config: () => ({flag: false, label: "default", nested: {a: 1, b: 2}})});
+    // @ts-expect-error Supplied values must follow the augmented schema.
+    remoteConfig({config: {flag: "wrong"}});
+    // @ts-expect-error Nested values must follow the augmented schema.
+    remoteConfig({config: {nested: {a: "wrong"}}});
+    // @ts-expect-error Getters must also follow the augmented schema.
+    remoteConfig({config: () => ({nested: {a: "wrong"}})});
+    // @ts-expect-error Unknown configuration fields remain invalid.
+    remoteConfig({config: {invented: true}});
+    // @ts-expect-error Defaults must be an object when supplied.
+    remoteConfig({config: null});
+    // @ts-expect-error Supplied array elements retain their required fields.
+    remoteConfig({config: {banners: [{}]}});
+    // @ts-expect-error Supplied tuples retain their required entries.
+    remoteConfig({config: {tuple: ["first"]}});
 
     return {} as Checks;
 }

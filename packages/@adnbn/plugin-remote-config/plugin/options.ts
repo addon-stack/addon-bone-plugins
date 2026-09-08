@@ -11,7 +11,7 @@ export const isConfig = (value: unknown): value is Record<string, unknown> => {
 };
 
 export const normalizeOptions = (options: RemoteConfigOptions): ResolvedRemoteConfigOptions => {
-    const {url, config, ttl = 1440, timeout = 10_000, retryDelay = 60_000, credentials = "omit"} = options;
+    const {url, config = {}, ttl = 1440, timeout = 10_000, retryDelay = 60_000, credentials = "omit"} = options;
 
     if (!isConfig(config)) {
         throw new TypeError("Remote config defaults must be a JSON object");

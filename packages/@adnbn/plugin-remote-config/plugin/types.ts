@@ -1,4 +1,4 @@
-import type {Get, Paths} from "type-fest";
+import type {Get, PartialDeep, Paths} from "type-fest";
 
 /** @internal */
 export const PluginName = "@adnbn/plugin-remote-config";
@@ -47,11 +47,11 @@ export interface RemoteConfigOptions {
     ttl?: number;
 
     /**
-     * Required defaults covering the consumer's RemoteConfig schema.
+     * Optional, deeply partial defaults for the consumer's RemoteConfig schema.
      * Objects are merged deeply with each successful response; arrays are replaced.
-     * Used before the first successful fetch, including the initial React render.
+     * Used before the first successful fetch, including the initial React render. Defaults to {}.
      */
-    config: RemoteConfig;
+    config?: PartialDeep<RemoteConfig>;
 
     /** Maximum request and JSON-body duration in milliseconds. Defaults to 10000. */
     timeout?: number;

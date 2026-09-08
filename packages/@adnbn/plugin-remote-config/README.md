@@ -28,7 +28,6 @@ import remoteConfig from "@adnbn/plugin-remote-config";
 export default defineConfig({
     plugins: [remoteConfig({
         url: "https://example.com/config.json",
-        config: {featureFlag: false},
     })],
 });
 ```
@@ -81,7 +80,8 @@ Adapt the store justifications if your extension uses these permissions for addi
 - Reads use the same-URL cache until TTL expires; the next read refreshes it. Concurrent reads share one request.
 - Successful responses merge deeply with the original defaults, never with previous remote values. Missing fields
   keep defaults; arrays replace whole; `false`, `0`, `""`, and `null` are preserved. An empty object restores defaults.
-- Failed refreshes retain the last working response, or defaults if none exists. Retries respect `retryDelay`.
+- Failed refreshes retain the last working response, or defaults if none exists. Without either, reads return `{}`.
+  Retries respect `retryDelay`.
   There is no background polling or maximum stale-cache age.
 
 For example, defaults `{banner: {enabled: false, text: "default"}}` plus `{banner: {text: "new"}}` produce
@@ -92,13 +92,15 @@ For example, defaults `{banner: {enabled: false, text: "default"}}` plus `{banne
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `url` | `"REMOTE_CONFIG_URL"` | HTTP(S) URL or environment variable name. `""` disables the endpoint. |
-| `config` | Required | Defaults covering all required fields in your `RemoteConfig` schema. |
+| `config` | `{}` | Optional, deeply partial defaults matching your `RemoteConfig` schema. |
 | `ttl` | `1440` | Cache freshness in minutes. Zero refreshes on every read, subject to retry delay. |
 | `timeout` | `10000` | Request and JSON-body timeout in milliseconds. Must be positive and within timer limits. |
 | `retryDelay` | `60000` | Delay after a failed refresh, in milliseconds. Zero disables it. |
 | `credentials` | `"omit"` | `"omit"`, `"same-origin"`, or `"include"`; use `"include"` for cookie authentication. |
 
 Each option accepts a build-time getter. Numbers must be finite; TTL and retry delay cannot be negative.
+`remoteConfig()` uses `REMOTE_CONFIG_URL` without requiring defaults. Omitting `config`, passing `undefined`, or
+returning `undefined` from its getter uses `{}`; explicit `null` or an array is not a valid defaults object.
 A missing environment variable warns at startup and disables fetching. An empty URL or a URL getter returning
 `undefined` disables it silently. Changing the URL invalidates the previous cache.
 
@@ -124,9 +126,13 @@ const enabled = await getRemoteConfig("featureFlag"); // boolean
 const label = await getRemoteConfig(config => config.featureFlag ? "on" : "off");
 ```
 
-Defaults must include all required nested fields; optional fields may be omitted. Paths support numeric array indices
+Defaults may omit required root and nested fields; supplied values must match the schema. For fields with no default
+that may be absent before loading or when requests fail, prefer optional properties (`field?: ...`). Arrays and tuples, when
+supplied, retain their element types. Paths support numeric array indices
 (`banners.0.title`) and up to ten recursive steps; broad, deep schemas can increase type-checking time. Optional or
 nullable branches and unbounded array indices can yield `undefined`.
+Dictionary lookups also include `undefined`. Result types follow your interface and the standard type-fest `Get`
+behavior, independently of defaults. An absent value returns `undefined` at runtime even if declared required.
 
 Use selectors for keys containing dots, brackets, or backslashes, reserved keys (`__proto__`, `prototype`,
 `constructor`), and values typed as `unknown` or `any`. Selection is local and always reads the full service result.
@@ -146,16 +152,19 @@ function Feature() {
 }
 ```
 
-The hook starts with defaults, fetches on mount, and ignores results after unmounting. Changing the selection uses
+The hook starts with defaults or `{}`, fetches on mount, and ignores results after unmounting. Missing dot paths
+initially return `undefined`. Changing the selection uses
 current state without refetching. Selectors must be synchronous; the hook neither polls nor subscribes to updates.
 
 ## Limits and upgrading
 
-- TypeScript checks defaults, not server data. Responses must be JSON objects with values matching your schema;
+- TypeScript checks supplied defaults, not server data or the presence of required fields at runtime. Selectors
+  receive an object but can throw when directly accessing an absent nested branch; use optional chaining as needed.
+  Responses must be JSON objects with values matching your schema;
   explicit `null` replaces a default, and replacement array elements must contain their required fields.
 - Results are independent copies. Network and storage failures are handled separately; failed persistence leaves an
   in-memory cache, but configuration and retry metadata may be lost after a service-worker restart.
-- **Breaking changes:** use `/react` instead of `/hooks`, provide complete defaults, and augment `RemoteConfig` instead
+- **Upgrading from 0.3.x:** use `/react` instead of `/hooks` and augment `RemoteConfig` instead
   of overriding it with a generic. Old caches are not migrated. Credentials now default to `"omit"`.
 
 For development, testing, and releases, see the

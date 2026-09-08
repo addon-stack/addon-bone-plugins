@@ -120,7 +120,8 @@ The remote-config consumer installs a freshly packed tarball and builds Chrome/F
 version pinned in [the fixture manifest](tests/fixtures/plugin-remote-config-consumer/package.json). Its React fixture
 declares `scheduler` explicitly because the framework resolves React dependencies through consumer aliases. The
 package itself only imports React in its `/react` entrypoint. Additional builds exercise the default
-`REMOTE_CONFIG_URL` environment variable both when set and when missing, including the startup warning.
+`REMOTE_CONFIG_URL` environment variable both when set and when missing with `remoteConfig()` and no arguments,
+including the startup warning. Additional variants build partial defaults and a getter returning `undefined`.
 
 After each build, the consumer checks the generated service registry against its augmented `RemoteConfig` interface
 for both direct and proxy access. The service method's JSDoc preserves the public `import(...)` reference; removing
@@ -129,8 +130,10 @@ it causes the framework parser to inline the package's empty base interface as `
 `pnpm check:consumer` and `pnpm check:browser` run both migrated packages. For a narrow runtime check, use
 `node tools/smoke/plugin-remote-config-browser.mjs`; it starts an isolated local endpoint and disposable browser
 profiles. It tests failed refreshes, recovery, deep partial responses, typed dot-path and selector access, React
-selection changes without refetching, and Chrome service-worker restarts. The consumer type checks also reject
-invalid paths and incomplete defaults against its augmented schema.
+selection changes without refetching, and Chrome service-worker restarts. A separate build without defaults uses a
+clean profile and holds the first response until React's empty initial config and missing selections are checked.
+The consumer type checks accept absent and partial defaults, reject invalid paths and wrongly typed defaults, and
+preserve the augmented result types and standard `Get` behavior for optional fields, arrays, and dictionaries.
 
 `pnpm build:consumer` writes remote-config builds under `tests/fixtures/plugin-remote-config-consumer/dist`. Set
 `REMOTE_CONFIG_SMOKE_URL` to a test endpoint when creating manual builds; its default is
@@ -161,6 +164,10 @@ read. Stop the server with `Ctrl+C`. `pnpm serve:consumer` remains the content-s
 
 For immediate response switching, build with `REMOTE_CONFIG_SMOKE_TTL=0 pnpm build:consumer`. The automated browser
 smoke sets this override itself so its failure and recovery scenarios do not wait for the manual fixture's TTL.
+Use `REMOTE_CONFIG_SMOKE_DEFAULTS=none` or `partial` when building to exercise empty or partial defaults manually;
+the default fixture supplies `{flag: false, label: "default", nested: {a: 1, b: 2}}`.
+`REMOTE_CONFIG_SMOKE_TIMEOUT` sets the fixture's request timeout in milliseconds (default `1000`); the automated
+smoke uses `10000` for the held-response scenario without defaults.
 
 ## Releases
 

@@ -38,7 +38,7 @@ class RemoteConfigService {
         const cache = this.cache;
 
         if (!cache) {
-            return this.options.config;
+            return this.current();
         }
 
         await cache.load();

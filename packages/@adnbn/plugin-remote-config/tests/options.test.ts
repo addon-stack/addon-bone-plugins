@@ -127,14 +127,36 @@ it("accepts fractional TTL, zero TTL and a disabled retry delay", () => {
     expect(normalizeOptions({config: {}, ttl: 0})).toMatchObject({ttl: 0});
 });
 
-it.each([undefined, [], null, "config", new Date()])("rejects missing or non-object defaults: %j", config => {
+it.each([[], null, "config", new Date()])("rejects non-object defaults: %j", config => {
     expect(() => normalizeOptions({config: config as any})).toThrow("defaults must be a JSON object");
 });
 
-it("reports missing defaults when a JavaScript caller omits plugin options", () => {
-    // @ts-expect-error JavaScript callers can omit the options required by the TypeScript signature.
+it("resolves the default environment variable when plugin options are omitted", () => {
+    jest.mocked(getEnv).mockReturnValue("https://config.example/config.json");
     const plugin = pluginFactory() as unknown as TestPlugin;
-    expect(() => plugin.startup({config: {}})).toThrow(new TypeError("Remote config defaults must be a JSON object"));
+    plugin.startup({config: {}});
+    expect(getEnv).toHaveBeenCalledWith("REMOTE_CONFIG_URL");
+
+    expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__)).toMatchObject({
+        url: "https://config.example/config.json", config: {},
+    });
+});
+
+it.each([{}, {config: undefined}, {config: {}}, {config: () => undefined}])(
+    "normalizes absent or empty defaults at startup: %j", options => {
+        const plugin = pluginFactory(options) as unknown as TestPlugin;
+        plugin.startup({config: {}});
+        expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__)).toMatchObject({config: {}});
+    }
+);
+
+it("resolves a partial defaults getter once and preserves the supplied nested fields", () => {
+    const config = jest.fn(() => ({nested: {a: 1}}));
+    const plugin = pluginFactory({config}) as unknown as TestPlugin;
+    plugin.startup({config: {}});
+    expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__)).toMatchObject({config: {nested: {a: 1}}});
+    definitions(plugin);
+    expect(config).toHaveBeenCalledTimes(1);
 });
 
 it("allows a URL getter to disable the endpoint even when the default environment variable exists", () => {

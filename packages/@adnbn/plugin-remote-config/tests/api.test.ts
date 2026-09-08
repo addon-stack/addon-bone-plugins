@@ -51,7 +51,21 @@ it("returns complete injected defaults and normalized runtime options", () => {
     expect(getRemoteConfigOptions()).toMatchObject({config, ttl: 1440, timeout: 10_000, credentials: "omit"});
 });
 
-it("rejects injected options without required defaults", () => {
+it("normalizes injected options without defaults", () => {
     Object.assign(globalThis, {__REMOTE_CONFIG_OPTIONS__: {}});
-    expect(() => getRemoteConfigOptions()).toThrow("defaults must be a JSON object");
+    expect(getRemoteConfigOptions()).toMatchObject({config: {}, ttl: 1440, timeout: 10_000, retryDelay: 60_000});
+});
+
+it.each(["serviceWorker", "contentScript"] as const)("returns absent values from empty config in %s", async context => {
+    harness = setupBrowserHarness(context);
+    const empty = jest.fn(async () => ({}));
+    jest.mocked(getOrigin).mockReturnValue({get: empty} as unknown as ReturnType<typeof getOrigin>);
+    jest.mocked(getProxy).mockReturnValue({get: empty} as ReturnType<typeof getProxy>);
+    const selector = jest.fn(value => Object.keys(value));
+
+    await expect(getRemoteConfig()).resolves.toEqual({});
+    await expect(getRemoteConfig("banner.enabled" as never)).resolves.toBeUndefined();
+    await expect(getRemoteConfig(selector)).resolves.toEqual([]);
+    expect(selector).toHaveBeenCalledWith({});
+    expect(empty.mock.calls).toEqual([[], [], []]);
 });

@@ -1,3 +1,4 @@
+import remoteConfig from "../../plugin";
 import {selectConfig} from "../../plugin/selection";
 import type {RemoteConfig} from "../../plugin/types";
 
@@ -9,6 +10,8 @@ declare module "../../plugin/types" {
         nested: {a: number; b: number};
         optional?: {value: number};
         items?: {title: string}[];
+        banners: {title: string}[];
+        labels: Record<string, string>;
     }
 }
 
@@ -29,6 +32,8 @@ export function checkHelperTypes(
     const _number = selectConfig(config, "nested.b");
     const _optional = selectConfig(config, "optional.value");
     const _array = selectConfig(config, "items.0.title");
+    const _requiredArray = selectConfig(config, "banners.0.title");
+    const _dictionary = selectConfig(config, "labels.save");
     const _selected = selectConfig(config, value => value.flag);
     const _asyncSelected = selectConfig(config, async value => value.label);
     const _optionalSelection = selectConfig(config, optionalPath);
@@ -41,6 +46,8 @@ export function checkHelperTypes(
         Expect<Equal<typeof _number, number>>,
         Expect<Equal<typeof _optional, number | undefined>>,
         Expect<Equal<typeof _array, string | undefined>>,
+        Expect<Equal<typeof _requiredArray, string | undefined>>,
+        Expect<Equal<typeof _dictionary, string | undefined>>,
         Expect<Equal<typeof _selected, boolean>>,
         Expect<Equal<typeof _asyncSelected, Promise<string>>>,
         Expect<Equal<typeof _optionalSelection, RemoteConfig | number>>,
@@ -55,6 +62,15 @@ export function checkHelperTypes(
     selectConfig(config, value => value.missing);
     // @ts-expect-error The selection cannot be omitted when a path type is explicitly supplied.
     selectConfig<"nested.b">(config);
+
+    remoteConfig();
+    remoteConfig({url: "CONFIG_URL"});
+    remoteConfig({config: {nested: {a: 1}}});
+    remoteConfig({config: () => undefined});
+    // @ts-expect-error Supplied defaults must still follow the augmented field types.
+    remoteConfig({config: {nested: {a: "wrong"}}});
+    // @ts-expect-error Supplied array elements retain their schema.
+    remoteConfig({config: {banners: [{}]}});
 
     return {} as Checks;
 }

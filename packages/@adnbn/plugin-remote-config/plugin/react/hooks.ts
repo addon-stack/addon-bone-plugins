@@ -13,7 +13,7 @@ export function useRemoteConfig<Value>(
 ): Value;
 
 export function useRemoteConfig(selection?: RemoteConfigPath | ((config: RemoteConfig) => unknown)): unknown {
-    const [config, setConfig] = useState<RemoteConfig>(() => getRemoteConfigOptions().config);
+    const [config, setConfig] = useState(() => getRemoteConfigOptions().config);
 
     useEffect(() => {
         let active = true;
@@ -31,5 +31,6 @@ export function useRemoteConfig(selection?: RemoteConfigPath | ((config: RemoteC
         };
     }, []);
 
-    return selectConfig(config, selection);
+    // Selection follows the consumer's schema even when runtime data is partial.
+    return selectConfig(config as RemoteConfig, selection);
 }

@@ -14,14 +14,14 @@ import {
 export type {RemoteConfig, RemoteConfigOptions, ResolvedRemoteConfigOptions};
 export type {RemoteConfigPath, RemoteConfigValue} from "./types";
 
-export default definePlugin((options: ValueOrGetter<RemoteConfigOptions>) => {
+export default definePlugin((options: ValueOrGetter<RemoteConfigOptions> = {}) => {
     let resolved: ResolvedRemoteConfigOptions;
 
     return {
         name: PluginName,
         service: true,
         startup: () => {
-            // JavaScript callers with missing options must still reach defaults validation.
+            // JavaScript callers may pass null, which the default parameter does not replace.
             const values = Object.fromEntries(
                 Object.entries(options ?? {})
                     .map(([key, value]) => [key, typeof value === "function" ? value() : value])

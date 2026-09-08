@@ -15,11 +15,19 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const expectedRemote = {flag: true, label: "remote", nested: {a: 10, b: 20}};
 const expectedPartial = {flag: false, label: "partial", nested: {a: 30, b: 2}};
 const requestCookies = [];
+const pendingResponses = new Set();
 let mode = "remote";
 
 const server = createServer((request, response) => {
     if (request.url === "/config.json") {
         requestCookies.push(request.headers.cookie ?? "");
+
+        if (mode === "pending") {
+            pendingResponses.add(response);
+            response.once("close", () => pendingResponses.delete(response));
+
+            return;
+        }
 
         if (mode === "failure") {
             response.writeHead(503).end("Temporarily unavailable");
@@ -73,7 +81,10 @@ const readConfig = async evaluate => {
 
         const config = JSON.parse(text);
         const selected = JSON.parse(await evaluate(`document.getElementById('remote-config-selection').textContent`));
-        equal(selected, {value: config.nested.b, enabled: config.flag}, "Proxy API dot path and selector");
+        equal(selected, {value: config.nested?.b, enabled: config.flag}, "Proxy API dot path and selector");
+
+        equal(await evaluate(`document.getElementById('remote-config-selection').dataset.missingOptional`),
+            "true", "Absent API dot path returns undefined");
 
         return config;
     }, "remote config response");
@@ -83,8 +94,31 @@ const equal = (actual, expected, label) => {
     assert(JSON.stringify(actual) === JSON.stringify(expected), `${label}: ${JSON.stringify(actual)}`);
 };
 
-const scenarios = async (evaluate, restart, inspect) => {
+const scenarios = async (evaluate, restart, inspect, withoutDefaults) => {
     requestCookies.length = 0;
+
+    if (withoutDefaults) {
+        const initial = await waitFor(async () => {
+            const text = await evaluate(`document.getElementById('remote-config-hook-initial')?.textContent`);
+
+            return text ? JSON.parse(text) : undefined;
+        }, "React initial render without defaults");
+
+        equal(initial, {config: {}, missingValue: true, missingLabel: true},
+            "Empty initial config and missing selections");
+
+        await waitFor(() => pendingResponses.size || undefined, "First request without cached configuration");
+
+        equal(await evaluate(`document.getElementById('remote-config-hook-path').textContent`),
+            "", "Missing React dot path before the server responds");
+
+        mode = "remote";
+
+        for (const response of pendingResponses) {
+            response.writeHead(200, {"Content-Type": "application/json", "Cache-Control": "no-store"});
+            response.end(JSON.stringify(expectedRemote));
+        }
+    }
 
     await waitFor(async () => {
         const ready = await evaluate(`document.getElementById('remote-config-hook')?.textContent === 'remote'`);
@@ -120,14 +154,15 @@ const scenarios = async (evaluate, restart, inspect) => {
 
     mode = "partial";
     await delay(150);
-    equal(await readConfig(evaluate), expectedPartial, "Partial response merged only with defaults");
+    const partial = withoutDefaults ? {label: "partial", nested: {a: 30}} : expectedPartial;
+    equal(await readConfig(evaluate), partial, "Partial response merged only with defaults");
     mode = "array";
-    equal(await readConfig(evaluate), expectedPartial, "Malformed config keeps the last working response");
+    equal(await readConfig(evaluate), partial, "Malformed config keeps the last working response");
     assert(requestCookies.length > 0, "Expected config requests while testing credentials");
     equal(requestCookies.filter(Boolean), [], "Default config requests must omit the test site cookie");
 };
 
-const runChrome = async (extensionDir, siteUrl) => {
+const runChrome = async (extensionDir, siteUrl, withoutDefaults = false) => {
     assert(chromeBinary, "Chrome is required for the remote-config runtime smoke");
     const profile = await mkdtemp(path.join(tmpdir(), "remote-config-chrome-"));
     const port = await getFreePort();
@@ -135,7 +170,7 @@ const runChrome = async (extensionDir, siteUrl) => {
     let rpc;
 
     try {
-        mode = "remote";
+        mode = withoutDefaults ? "pending" : "remote";
 
         child = spawn(chromeBinary, [
             "--headless=new", "--no-sandbox", "--no-first-run", "--no-default-browser-check",
@@ -186,8 +221,10 @@ const runChrome = async (extensionDir, siteUrl) => {
             }, "service worker termination");
         };
 
-        await scenarios(evaluate, restart, inspect);
-        console.log("Chrome MV3: API, React hook, local cache, failed refresh, restart and recovery passed.");
+        await scenarios(evaluate, restart, inspect, withoutDefaults);
+
+        console.log(`Chrome MV3 (${withoutDefaults ? "no defaults" : "with defaults"}): ` +
+            "API, React hook, local cache, failed refresh, restart and recovery passed.");
     } finally {
         await rpc?.close();
         await stopProcess(child);
@@ -195,7 +232,7 @@ const runChrome = async (extensionDir, siteUrl) => {
     }
 };
 
-const runFirefox = async (extensionDir, siteUrl) => {
+const runFirefox = async (extensionDir, siteUrl, withoutDefaults = false) => {
     assert(firefoxBinary, "Firefox is required for the remote-config runtime smoke");
     const profile = await mkdtemp(path.join(tmpdir(), "remote-config-firefox-"));
     const port = await getFreePort();
@@ -203,7 +240,7 @@ const runFirefox = async (extensionDir, siteUrl) => {
     let rpc;
 
     try {
-        mode = "remote";
+        mode = withoutDefaults ? "pending" : "remote";
 
         child = spawn(firefoxBinary, [
             "--headless", "--no-remote", "--profile", profile, "--remote-debugging-port", String(port), "about:blank",
@@ -215,8 +252,10 @@ const runFirefox = async (extensionDir, siteUrl) => {
         const {context} = await rpc.send("browsingContext.create", {type: "tab"});
         await rpc.send("browsingContext.navigate", {context, url: siteUrl, wait: "complete"});
         const evaluate = expression => firefoxEvaluate(rpc, context, expression);
-        await scenarios(evaluate);
-        console.log("Firefox MV2: proxy API, React hook, failed refresh, partial response and recovery passed.");
+        await scenarios(evaluate, undefined, undefined, withoutDefaults);
+
+        console.log(`Firefox MV2 (${withoutDefaults ? "no defaults" : "with defaults"}): ` +
+            "proxy API, React hook, failed refresh, partial response and recovery passed.");
     } finally {
         if (rpc) {
             try {
@@ -242,6 +281,8 @@ try {
     directory = build(new URL("config.json", siteUrl).href);
     await runChrome(path.join(directory, "consumer/dist/smoke-chrome-mv3"), siteUrl);
     await runFirefox(path.join(directory, "consumer/dist/smoke-firefox-mv2"), siteUrl);
+    await runChrome(path.join(directory, "consumer/no-defaults/smoke-chrome-mv3"), siteUrl, true);
+    await runFirefox(path.join(directory, "consumer/no-defaults/smoke-firefox-mv2"), siteUrl, true);
 } finally {
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));

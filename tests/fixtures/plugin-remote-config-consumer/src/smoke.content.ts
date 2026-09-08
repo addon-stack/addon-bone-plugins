@@ -8,10 +8,13 @@ import {createRoot} from "react-dom/client";
 function ConfigView() {
     const [path, setPath] = useState<"nested.a" | "nested.b">("nested.a");
     const [prefix, setPrefix] = useState("");
-    const label = useRemoteConfig(config => prefix + config.label);
+    const config = useRemoteConfig();
+    const label = useRemoteConfig(config => config.label === undefined ? undefined : prefix + config.label);
     const value = useRemoteConfig(path);
+    const [initial] = useState(() => ({config, missingValue: value === undefined, missingLabel: label === undefined}));
 
     return createElement("div", null,
+        createElement("pre", {id: "remote-config-hook-initial"}, JSON.stringify(initial)),
         createElement("pre", {id: "remote-config-hook"}, label),
         createElement("pre", {id: "remote-config-hook-path"}, value),
         createElement("button", {id: "switch-remote-config-path", onClick: () => {
@@ -41,11 +44,13 @@ export default defineContentScript({
             output.textContent = "pending";
 
             try {
-                const [config, value, enabled] = await Promise.all([
+                const [config, value, enabled, optional] = await Promise.all([
                     getRemoteConfig(), getRemoteConfig("nested.b"), getRemoteConfig(config => config.flag),
+                    getRemoteConfig("optional.value"),
                 ]);
 
                 selection.textContent = JSON.stringify({value, enabled});
+                selection.dataset.missingOptional = String(optional === undefined);
                 output.textContent = JSON.stringify(config);
             } catch (error) {
                 output.textContent = JSON.stringify({error: String(error)});
