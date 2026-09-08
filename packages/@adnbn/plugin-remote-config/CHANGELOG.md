@@ -1,3 +1,24 @@
+## 0.5.0 (2026-09-08)
+
+### 🚀 Features
+
+- ⚠️  **@adnbn/plugin-remote-config:** allow optional partial defaults ([1d93a25](https://github.com/addon-stack/addon-bone-plugins/commit/1d93a25))
+
+### 🩹 Fixes
+
+- **@adnbn/plugin-remote-config:** update package author ([2d41261](https://github.com/addon-stack/addon-bone-plugins/commit/2d41261))
+
+### ⚠️  Breaking Changes
+
+- **@adnbn/plugin-remote-config:** allow optional partial defaults  ([1d93a25](https://github.com/addon-stack/addon-bone-plugins/commit/1d93a25))
+  ResolvedRemoteConfigOptions.config, returned by
+  getRemoteConfigOptions(), is now PartialDeep<RemoteConfig> instead of
+  RemoteConfig. Callers accessing defaults must handle optional fields.
+
+### ❤️ Thank You
+
+- Anjey Tsibylskij @atldays
+
 ## 0.4.0 (2026-09-08)
 
 ### 🚀 Features
