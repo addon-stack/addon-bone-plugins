@@ -2,16 +2,16 @@ import {defineService} from "adnbn";
 
 import {getRemoteConfigOptions} from "../api";
 import {isConfig} from "../options";
-import type {RemoteConfig, RemoteConfigOptions} from "../types";
+import {PluginName, type RemoteConfig, type ResolvedRemoteConfigOptions} from "../types";
 import Cache from "./Cache";
 
 class RemoteConfigService {
     private pending?: Promise<RemoteConfig>;
     private readonly cache?: Cache;
 
-    constructor(private readonly options: RemoteConfigOptions) {
+    constructor(private readonly options: ResolvedRemoteConfigOptions) {
         if (options.url) {
-            this.cache = new Cache(options.url, options.ttl, options.retryDelay ?? 60_000);
+            this.cache = new Cache(options.url, options.ttl, options.retryDelay);
         }
     }
 
@@ -50,7 +50,7 @@ class RemoteConfigService {
         try {
             config = await this.fetch(cache.url);
         } catch (error) {
-            console.error("[@adnbn/plugin-remote-config] refresh failed", error);
+            console.error(`[${PluginName}] refresh failed`, error);
             await cache.deferRetry();
 
             return this.current();
@@ -69,11 +69,11 @@ class RemoteConfigService {
             timer = setTimeout(() => {
                 reject(new Error("Remote config request timed out"));
                 controller.abort();
-            }, this.options.timeout ?? 10_000);
+            }, this.options.timeout);
         });
 
         const request = async () => {
-            const response = await fetch(url, {credentials: "include", signal: controller.signal});
+            const response = await fetch(url, {credentials: this.options.credentials, signal: controller.signal});
 
             if (!response.ok) {
                 throw new Error(`Response error status: ${response.status} - ${response.statusText}`);

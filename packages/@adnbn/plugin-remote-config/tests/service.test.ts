@@ -58,6 +58,18 @@ it("uses defaults without accessing storage or the network when URL is disabled"
     expect(read).not.toHaveBeenCalled();
 });
 
+it("omits request credentials by default", async () => {
+    await service().get();
+    expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({credentials: "omit"}));
+});
+
+it.each(["omit", "same-origin", "include"] as const)(
+    "uses the configured credentials policy: %s", async credentials => {
+        await service({credentials}).get();
+        expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({credentials}));
+    }
+);
+
 it("merges each successful partial response with defaults, excluding previous remote values", async () => {
     const instance = service({ttl: 0});
     await expect(instance.get()).resolves.toEqual(remote);
@@ -151,6 +163,23 @@ it("shares failed attempts and retains retry delay across service restarts", asy
     expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
+it.each([true, false])("skips retry writes with zero delay and an existing cache: %s", async hasCache => {
+    const record = {url, config: remote, updatedAt: now - 120_000};
+
+    if (hasCache) {
+        await seed(record);
+    }
+
+    const write = jest.spyOn(harness.storage.api.local, "set");
+    fetchMock.mockRejectedValue(new Error("offline"));
+    const instance = service({ttl: 0, retryDelay: 0});
+    await expect(instance.get()).resolves.toEqual(hasCache ? remote : defaults);
+    await expect(instance.get()).resolves.toEqual(hasCache ? remote : defaults);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(write).not.toHaveBeenCalled();
+    expect(stored()).toEqual(hasCache ? record : undefined);
+});
+
 it("retains stale configuration across service restarts", async () => {
     await service().get();
     now += 86_400_000;
@@ -174,6 +203,20 @@ it("still fetches when storage reads fail and contains errors when both sources 
     fetchMock.mockRejectedValue(new Error("offline"));
     await expect(service().get()).resolves.toEqual(defaults);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it("retains network results when the storage provider cannot be constructed", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(chrome, "storage")!;
+    Object.defineProperty(chrome, "storage", {...descriptor, value: undefined});
+
+    try {
+        const instance = service({ttl: 0});
+        await expect(instance.get()).resolves.toEqual(remote);
+        fetchMock.mockRejectedValue(new Error("offline"));
+        await expect(instance.get()).resolves.toEqual(remote);
+    } finally {
+        Object.defineProperty(chrome, "storage", descriptor);
+    }
 });
 
 it("returns and retains successful data in memory when persistence fails", async () => {
@@ -213,11 +256,8 @@ it.each([true, false])("ignores records outside its namespace when network succe
     const record = {url, config: remote, updatedAt: now};
 
     const unrelated = {
-        "remote-config": record,
         cache: record,
         "another-plugin:cache": record,
-        "secure:remote-config": "old ciphertext",
-        "secure::remote-config": "old ciphertext",
     };
 
     await harness.storage.api.local.set(unrelated);

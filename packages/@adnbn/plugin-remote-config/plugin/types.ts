@@ -1,9 +1,12 @@
+/** @internal */
+export const PluginName = "@adnbn/plugin-remote-config";
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Consumer projects augment this interface.
 export interface RemoteConfig {}
 
 /**
  * Options for configuring @adnbn/plugin-remote-config.
- * These values are embedded at build time and read by the runtime service.
+ * Build-time inputs resolved by the plugin before being embedded in the extension.
  */
 export interface RemoteConfigOptions {
     /**
@@ -40,6 +43,15 @@ export interface RemoteConfigOptions {
 
     /** Minimum delay between failed refresh attempts in milliseconds. Defaults to 60000; zero disables the delay. */
     retryDelay?: number;
+
+    /** Fetch credentials policy. Defaults to omit; use include for cookie-authenticated endpoints. */
+    credentials?: "omit" | "same-origin" | "include";
+}
+
+/** Runtime options with defaults applied and the environment variable resolved. */
+export interface ResolvedRemoteConfigOptions extends Required<Omit<RemoteConfigOptions, "url">> {
+    /** Absolute HTTP(S) endpoint URL, or undefined when the endpoint is disabled. */
+    url?: string;
 }
 
 export type ValueOrGetter<T> = {

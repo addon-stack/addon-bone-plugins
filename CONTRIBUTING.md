@@ -112,9 +112,11 @@ validation and does not change the local fixtures' generated files.
 
 ## Remote configuration validation
 
-The remote-config consumer installs a freshly packed tarball and builds Chrome/Firefox MV2/MV3 with Addon Bone
-0.10.0. Its React fixture declares `scheduler` explicitly because that framework version resolves React dependencies
-through consumer aliases. The package itself only imports React in its hooks entrypoint.
+The remote-config consumer installs a freshly packed tarball and builds Chrome/Firefox MV2/MV3 with the Addon Bone
+version pinned in [the fixture manifest](tests/fixtures/plugin-remote-config-consumer/package.json). Its React fixture
+declares `scheduler` explicitly because the framework resolves React dependencies through consumer aliases. The
+package itself only imports React in its hooks entrypoint. Additional builds exercise the default
+`REMOTE_CONFIG_URL` environment variable both when set and when missing, including the startup warning.
 
 After each build, the consumer checks the generated service registry against its augmented `RemoteConfig` interface
 for both direct and proxy access. The service method's JSDoc preserves the public `import(...)` reference; removing

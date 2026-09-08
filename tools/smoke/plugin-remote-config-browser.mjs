@@ -14,10 +14,13 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const expectedRemote = {flag: true, label: "remote", nested: {a: 10, b: 20}};
 const expectedPartial = {flag: false, label: "partial", nested: {a: 30}};
+const requestCookies = [];
 let mode = "remote";
 
 const server = createServer((request, response) => {
     if (request.url === "/config.json") {
+        requestCookies.push(request.headers.cookie ?? "");
+
         if (mode === "failure") {
             response.writeHead(503).end("Temporarily unavailable");
         } else {
@@ -28,7 +31,11 @@ const server = createServer((request, response) => {
             response.end(JSON.stringify(config));
         }
     } else {
-        response.writeHead(200, {"Content-Type": "text/html"});
+        response.writeHead(200, {
+            "Content-Type": "text/html",
+            "Set-Cookie": "remote_config_session=smoke; Path=/; SameSite=Lax",
+        });
+
         response.end("<!doctype html><title>Remote config smoke</title><body>Remote config test</body>");
     }
 });
@@ -69,12 +76,15 @@ const equal = (actual, expected, label) => {
 };
 
 const scenarios = async (evaluate, restart, inspect) => {
+    requestCookies.length = 0;
+
     await waitFor(async () => {
         const ready = await evaluate(`document.getElementById('remote-config-hook')?.textContent === 'remote'`);
 
         return ready ? true : undefined;
     }, "React hook to receive the remote configuration");
 
+    assert(await evaluate("document.cookie.includes('remote_config_session=smoke')"), "Test site cookie is missing");
     equal(await readConfig(evaluate), expectedRemote, "Initial configuration");
     await inspect?.();
     mode = "failure";
@@ -90,6 +100,8 @@ const scenarios = async (evaluate, restart, inspect) => {
     equal(await readConfig(evaluate), expectedPartial, "Partial response merged only with defaults");
     mode = "array";
     equal(await readConfig(evaluate), expectedPartial, "Malformed config keeps the last working response");
+    assert(requestCookies.length > 0, "Expected config requests while testing credentials");
+    equal(requestCookies.filter(Boolean), [], "Default config requests must omit the test site cookie");
 };
 
 const runChrome = async (extensionDir, siteUrl) => {

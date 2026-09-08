@@ -22,12 +22,14 @@ const packDir = path.join(temporaryRoot, "pack");
 const consumerDir = path.join(temporaryRoot, "consumer");
 const storeDir = path.join(repoRoot, ".pnpm-store");
 const ignoredFixtureEntries = new Set([".adnbn", "dist", "node_modules", "pnpm-lock.yaml"]);
+const smokeUrl = process.env.REMOTE_CONFIG_SMOKE_URL ?? "http://127.0.0.1:8765/config.json";
+const missingEnvWarning = 'Environment variable "REMOTE_CONFIG_URL" is unset or empty';
 
-const run = (command, args, cwd) => {
+const run = (command, args, cwd, env = {}) => {
     const result = spawnSync(command, args, {
         cwd,
         encoding: "utf8",
-        env: {...process.env, CI: "true"},
+        env: {...process.env, CI: "true", ...env},
         stdio: "pipe",
     });
 
@@ -37,7 +39,7 @@ const run = (command, args, cwd) => {
         throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status ?? "unknown"}`);
     }
 
-    return result.stdout ?? "";
+    return `${result.stdout ?? ""}${result.stderr ?? ""}`;
 };
 
 const readJson = file => JSON.parse(readFileSync(file, "utf8"));
@@ -74,21 +76,33 @@ const shouldCopyFixtureEntry = source => {
     return !ignoredFixtureEntries.has(topLevelEntry);
 };
 
-const buildAndInspect = ({browser, manifestVersion}) => {
+const buildAndInspect = ({browser, manifestVersion, configUrl = smokeUrl, env = {}}) => {
     const args = ["node_modules/adnbn/bin/adnbn.js", "build", ".", "-a", "smoke", "-b", browser];
 
     if (manifestVersion === 2) {
         args.push("--mv2");
     }
 
-    run("node", args, consumerDir);
+    const output = run("node", args, consumerDir, env);
     run("pnpm", ["exec", "tsc", "--noEmit"], consumerDir);
     const outputDir = path.join(consumerDir, `dist/smoke-${browser}-mv${manifestVersion}`);
     const manifest = readJson(path.join(outputDir, "manifest.json"));
     assert(manifest.manifest_version === manifestVersion, "Incorrect manifest version");
     assertIncludes(manifest.permissions, "storage", "Remote config service permissions");
     const origins = manifestVersion === 3 ? manifest.host_permissions : manifest.permissions;
-    assertIncludes(origins, "http://127.0.0.1/*", "Config endpoint access");
+
+    if (configUrl) {
+        const parsed = new URL(configUrl);
+        assertIncludes(origins, `${parsed.protocol}//${parsed.hostname}/*`, "Config endpoint access");
+        assert(!output.includes(missingEnvWarning), "A resolved endpoint must not produce a missing-env warning");
+    } else {
+        assert(
+            !(origins ?? []).some(origin => origin.includes("://") && origin !== "http://127.0.0.1/*"),
+            `Disabled endpoint added access beyond the fixture's content-script host: ${JSON.stringify(origins)}`
+        );
+
+        assert(output.split(missingEnvWarning).length === 2, "Expected one missing-env warning during startup");
+    }
 
     for (const permission of ["tabs", "scripting", "unlimitedStorage", "cookies", "alarms", "<all_urls>"]) {
         assert(!(manifest.permissions ?? []).includes(permission), `Unexpected permission: ${permission}`);
@@ -100,8 +114,12 @@ const buildAndInspect = ({browser, manifestVersion}) => {
 
     assert(backgroundFiles.length > 0, `${browser} MV${manifestVersion} must include the service`);
     const background = backgroundFiles.map(file => readFileSync(path.join(outputDir, file), "utf8")).join("\n");
-    assert(background.includes("[@adnbn/plugin-remote-config]"), "Service runtime is missing");
+    assert(background.includes("Remote config response must be a JSON object"), "Service runtime is missing");
     assert(!background.includes("__REMOTE_CONFIG_OPTIONS__"), "Build-time options were not replaced");
+
+    if (configUrl) {
+        assert(background.includes(configUrl), "Resolved URL is missing from the runtime options");
+    }
 
     if (process.argv.includes("--keep-output")) {
         const declarationsDir = path.join(repoRoot, "output/plugin-remote-config/types");
@@ -162,6 +180,28 @@ try {
         `Packed plugin contains runtime JavaScript: ${runtimeJavaScript.join(", ")}`
     );
 
+    const configPath = path.join(consumerDir, "adnbn.config.ts");
+    const originalConfig = readFileSync(configPath, "utf8");
+
+    try {
+        writeFileSync(configPath, `import {defineConfig} from "adnbn";
+import remoteConfig from "@adnbn/plugin-remote-config";
+
+export default defineConfig({
+    name: "Remote Config Environment Smoke",
+    description: "Validates build-time environment resolution.",
+    version: "1.0.0",
+    plugins: [remoteConfig()],
+});
+`);
+
+        const configUrl = "https://remote-config-env.example/config.json";
+        buildAndInspect({browser: "chrome", manifestVersion: 3, configUrl, env: {REMOTE_CONFIG_URL: configUrl}});
+        buildAndInspect({browser: "chrome", manifestVersion: 3, configUrl: null, env: {REMOTE_CONFIG_URL: undefined}});
+    } finally {
+        writeFileSync(configPath, originalConfig);
+    }
+
     const buildDirectories = [
         buildAndInspect({browser: "chrome", manifestVersion: 3}),
         buildAndInspect({browser: "chrome", manifestVersion: 2}),
@@ -169,9 +209,12 @@ try {
         buildAndInspect({browser: "firefox", manifestVersion: 2}),
     ];
 
+    const frameworkVersion = readJson(path.join(consumerDir, "node_modules/adnbn/package.json")).version;
+
     console.log(
-        "Verified packed @adnbn/plugin-remote-config builds and generated service types with Addon Bone 0.10.0 " +
-        "in Chrome and Firefox MV3/MV2."
+        "Verified packed @adnbn/plugin-remote-config builds and generated service types " +
+        `with Addon Bone ${frameworkVersion} in Chrome and Firefox MV3/MV2, ` +
+        "including resolved and missing environment variables."
     );
 
     if (process.argv.includes("--keep-output")) {

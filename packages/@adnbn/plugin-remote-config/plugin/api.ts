@@ -4,15 +4,15 @@ import {getService as getServiceOrigin} from "adnbn/service";
 import {isBackground} from "@addon-core/browser";
 
 import {normalizeOptions} from "./options";
-import type {RemoteConfig, RemoteConfigOptions} from "./types";
+import {PluginName, type RemoteConfig, type RemoteConfigOptions, type ResolvedRemoteConfigOptions} from "./types";
 
 export const getRemoteConfig = async <T extends RemoteConfig = RemoteConfig>(): Promise<T> => {
     const service = isBackground() ? getServiceOrigin : getServiceProxy;
 
-    return await service("@adnbn/plugin-remote-config/service").get() as T;
+    return await service(`${PluginName}/service`).get() as T;
 };
 
-export const getRemoteConfigOptions = (): RemoteConfigOptions => {
+export const getRemoteConfigOptions = (): ResolvedRemoteConfigOptions => {
     let options: Partial<RemoteConfigOptions> = {};
 
     try {
@@ -20,7 +20,7 @@ export const getRemoteConfigOptions = (): RemoteConfigOptions => {
         options = __REMOTE_CONFIG_OPTIONS__;
     } catch {
         console.error(
-            "Failed to load @adnbn/plugin-remote-config parameters. " +
+            `Failed to load ${PluginName} parameters. ` +
             "Make sure the plugin is properly configured in the adnbn configuration file."
         );
     }

@@ -1,6 +1,9 @@
 jest.mock("adnbn", () => ({definePlugin: (definition: unknown) => definition, getEnv: jest.fn()}));
+jest.mock("@rspack/core", () => ({DefinePlugin: jest.fn()}));
 
 import {getEnv} from "adnbn";
+
+import {DefinePlugin} from "@rspack/core";
 
 import pluginFactory from "../plugin";
 import {normalizeOptions} from "../plugin/options";
@@ -9,8 +12,19 @@ interface TestPlugin {
     service: boolean;
     startup(context: {config: object}): void;
     manifest(context: {config: object; manifest: {addHostPermission: jest.Mock}}): void;
-    bundler(context: {config: object}): {plugins: {_args: [Record<string, string>]}[]};
+    bundler(context: {config: object}): {plugins: unknown[]};
 }
+
+const definitions = (plugin: TestPlugin, config = {}) => {
+    plugin.bundler({config});
+
+    return jest.mocked(DefinePlugin).mock.calls.at(-1)![0] as Record<string, string>;
+};
+
+beforeEach(() => {
+    jest.mocked(getEnv).mockReset();
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+});
 
 it("resolves options at startup and reuses them across hooks and rebuilds", () => {
     jest.mocked(getEnv).mockReturnValue("https://config.example/path.json?token=example");
@@ -29,9 +43,9 @@ it("resolves options at startup and reuses them across hooks and rebuilds", () =
     expect(getEnv).toHaveBeenCalledTimes(1);
 
     plugin.manifest({config: build, manifest: {addHostPermission}});
-    const definitions = plugin.bundler({config: build}).plugins[0]._args[0];
+    const initialDefinitions = definitions(plugin, build);
 
-    expect(JSON.parse(definitions.__REMOTE_CONFIG_OPTIONS__)).toMatchObject({
+    expect(JSON.parse(initialDefinitions.__REMOTE_CONFIG_OPTIONS__)).toMatchObject({
         url: "https://config.example/path.json?token=example", config: {flag: false},
     });
 
@@ -41,7 +55,7 @@ it("resolves options at startup and reuses them across hooks and rebuilds", () =
     expect(getEnv).toHaveBeenCalledTimes(1);
 
     jest.mocked(getEnv).mockReturnValue("https://next.example/config.json");
-    expect(plugin.bundler({config: build}).plugins[0]._args[0]).toEqual(definitions);
+    expect(definitions(plugin, build)).toEqual(initialDefinitions);
     plugin.manifest({config: build, manifest: {addHostPermission}});
     expect(addHostPermission).toHaveBeenLastCalledWith("https://config.example/*");
     expect(url).toHaveBeenCalledTimes(1);
@@ -53,7 +67,7 @@ it("resolves options at startup and reuses them across hooks and rebuilds", () =
     expect(config).toHaveBeenCalledTimes(2);
     expect(getEnv).toHaveBeenCalledTimes(2);
 
-    expect(JSON.parse(plugin.bundler({config: {}}).plugins[0]._args[0].__REMOTE_CONFIG_OPTIONS__).url)
+    expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__).url)
         .toBe("https://next.example/config.json");
 });
 
@@ -75,12 +89,34 @@ it("adds no host permission for an explicitly disabled endpoint", () => {
     plugin.startup({config: {}});
     plugin.manifest({config: {}, manifest: {addHostPermission}});
     expect(addHostPermission).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalled();
+});
+
+it.each([undefined, ""])("warns once at startup when the default environment variable is %j", value => {
+    jest.mocked(getEnv).mockReturnValue(value);
+    const plugin = pluginFactory() as unknown as TestPlugin;
+    const addHostPermission = jest.fn();
+    plugin.startup({config: {}});
+    plugin.manifest({config: {}, manifest: {addHostPermission}});
+    definitions(plugin);
+    definitions(plugin);
+    expect(getEnv).toHaveBeenCalledWith("REMOTE_CONFIG_URL");
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"REMOTE_CONFIG_URL" is unset or empty'));
+    expect(addHostPermission).not.toHaveBeenCalled();
+});
+
+it("identifies a missing custom environment variable in the warning", () => {
+    const plugin = pluginFactory({url: "CUSTOM_CONFIG_URL"}) as unknown as TestPlugin;
+    plugin.startup({config: {}});
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('"CUSTOM_CONFIG_URL" is unset or empty'));
 });
 
 it.each([
     {ttl: -1}, {ttl: NaN}, {ttl: Infinity}, {timeout: 0}, {timeout: -1}, {timeout: 2_147_483_648},
     {retryDelay: -1}, {retryDelay: Infinity}, {url: "ftp://config.example/config.json"},
     {url: "https://user:password@config.example/config.json"},
+    {credentials: "unsupported" as any},
 ])("rejects invalid build parameters at startup: %j", options => {
     const plugin = pluginFactory(options) as unknown as TestPlugin;
     expect(() => plugin.startup({config: {}})).toThrow();
@@ -103,4 +139,5 @@ it("allows a URL getter to disable the endpoint even when the default environmen
     plugin.manifest({config: {}, manifest: {addHostPermission}});
     expect(addHostPermission).not.toHaveBeenCalled();
     expect(getEnv).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalled();
 });

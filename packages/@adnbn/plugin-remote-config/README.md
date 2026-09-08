@@ -76,8 +76,8 @@ Host access to the configuration server is used by the extension's background se
 for its configured features. The response supplies data and settings, not executable extension code.
 ```
 
-Adapt the justification to describe your extension's actual features. Requests retain the existing
-`credentials: "include"` behavior; applicable cookies may accompany them according to browser rules.
+Adapt the justification to describe your extension's actual features. Requests use `credentials: "omit"` by default.
+For a cookie-authenticated endpoint, set `credentials: "include"`; browser cookie restrictions still apply.
 
 ### Consumer-owned host access
 
@@ -120,12 +120,17 @@ previous working result instead.
 | `ttl` | `1440` | Freshness in minutes. Zero refreshes on each read, subject to failed-request retry delay. |
 | `timeout` | `10000` | Request and JSON-body timeout in milliseconds; must be positive and within browser timer limits. |
 | `retryDelay` | `60000` | Delay after a failed attempt, in milliseconds. Zero permits the next read to retry immediately. |
+| `credentials` | `"omit"` | Fetch credentials policy: `"omit"`, `"same-origin"`, or `"include"`. |
 
 Each option also accepts a build-time getter. Numeric options must be finite; TTL and retry delay must be
-non-negative. Environment variables that are not defined leave the endpoint disabled. URL changes invalidate the
+non-negative. Missing or empty environment variables disable the endpoint and produce a warning at startup.
+An explicit empty URL or a getter returning `undefined` disables it without a warning. URL changes invalidate the
 previous source's cache and retry deadline. Defaults are read from the current build.
 
 ## React
+
+React is an optional peer used by `/hooks`; this plugin does not require `react-dom` as a peer. Addon Bone may still
+require both packages independently.
 
 ```tsx
 import {useRemoteConfig} from "@adnbn/plugin-remote-config/hooks";
@@ -169,6 +174,8 @@ available from `/api` to read build-time options. `/service` remains the backgro
 - **Breaking storage change:** older encrypted and non-namespaced caches are not read or migrated. When upgrading
   from those versions, defaults are used until the first successful remote request. Only the ordinary namespaced
   `cache` record is used.
+- **Breaking request change:** credentials now default to `"omit"`. Set `credentials: "include"` to retain cookie
+  authentication used by previous versions.
 - Standalone source checking uses a development-only service registry declaration. Consumers receive their real
   service registry from Addon Bone; the development declaration is excluded from the npm tarball.
 

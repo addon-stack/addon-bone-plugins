@@ -1,7 +1,7 @@
 import {storageLocal, type StorageProvider} from "@addon-core/storage";
 
 import {isConfig} from "../options";
-import type {RemoteConfig} from "../types";
+import {PluginName, type RemoteConfig} from "../types";
 
 interface CacheRecord {
     url: string;
@@ -32,7 +32,7 @@ export default class Cache {
     }
 
     private get storage(): StorageProvider<StorageContract> {
-        return this.local ??= storageLocal<StorageContract>({namespace: "@adnbn/plugin-remote-config"});
+        return this.local ??= storageLocal<StorageContract>({namespace: PluginName});
     }
 
     public async load(): Promise<void> {
@@ -48,7 +48,7 @@ export default class Cache {
             const retryAt = this.record?.retryAt ?? 0;
             this.retryAt = retryAt <= Date.now() + this.retryDelay ? retryAt : 0;
         } catch (error) {
-            console.error("[@adnbn/plugin-remote-config] cache read failed", error);
+            console.error(`[${PluginName}] cache read failed`, error);
         }
     }
 
@@ -69,6 +69,10 @@ export default class Cache {
     }
 
     public async deferRetry(): Promise<void> {
+        if (this.retryDelay === 0) {
+            return;
+        }
+
         this.retryAt = Date.now() + this.retryDelay;
 
         if (this.readable) {
@@ -103,7 +107,7 @@ export default class Cache {
             await this.storage.set("cache", this.record);
             this.readable = true;
         } catch (error) {
-            console.error("[@adnbn/plugin-remote-config] cache write failed", error);
+            console.error(`[${PluginName}] cache write failed`, error);
         }
     }
 }

@@ -54,6 +54,7 @@
   `@adnbn/plugin-remote-config` and key `cache`.
   This is an intentional breaking change: use no secure-storage APIs and do not add legacy cache migration paths.
 - Keep network and storage failures independent, share concurrent refreshes, and bound requests and retry frequency.
+- Requests default to `credentials: "omit"`; cookie-authenticated endpoints must explicitly select `"include"`.
 - Keep the four public exports and declaration-merging contract. Addon Bone owns compilation and service transport.
 
 ## Workspace and releases
