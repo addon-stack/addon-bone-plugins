@@ -1,3 +1,18 @@
+## 0.6.0 (2026-09-28)
+
+### 🚀 Features
+
+- ⚠️  **@adnbn/plugin-remote-config:** configure browser HTTP caching ([7a9790d](https://github.com/addon-stack/addon-bone-plugins/commit/7a9790d))
+
+### ⚠️  Breaking Changes
+
+- **@adnbn/plugin-remote-config:** configure browser HTTP caching  ([7a9790d](https://github.com/addon-stack/addon-bone-plugins/commit/7a9790d))
+  HTTP caching now defaults to no-store. Set cache to "default" for prior behavior.
+
+### ❤️ Thank You
+
+- Anjey Tsibylskij @atldays
+
 ## 0.5.0 (2026-09-08)
 
 ### 🚀 Features
