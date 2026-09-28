@@ -2,6 +2,15 @@ packages:
   - packages/@adnbn/*
   - tests/fixtures/*
 
+overrides:
+  # Nx 23.2.1 pins 1.6.1. Remove when Nx requires a version fixed for GHSA-7w5x-hrqm-74c2.
+  "nx>smol-toml@<=1.7.0": "1.9.0"
+  # Rspack's 1.1.5 adapter pins 5.2.2. Remove when it requires the patched 5.2.6 or newer.
+  "@rspack/dev-server@1.1.5>webpack-dev-server": "5.2.6"
+  # SockJS only uses require("uuid").v4; 11.1.1 retains CommonJS and fixes GHSA-w5hq-g745-h8pq.
+  # Remove when SockJS no longer requires vulnerable uuid versions.
+  "sockjs@0.3.24>uuid": "11.1.1"
+
 allowBuilds:
   "@parcel/watcher": true
   "@swc/core": true

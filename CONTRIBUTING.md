@@ -59,6 +59,12 @@ or breaking commit, Nx correctly leaves the package version unchanged and the ma
 
 Use Node.js 24 or newer and pnpm 11.24.0 or newer.
 
+Keep `nx` and `@nx/js` on the same version and apply required migrations with `nx migrate`. Security overrides in
+`pnpm-workspace.yaml` are scoped to upstream packages that still require vulnerable dependencies. Check their removal
+conditions when updating those packages. The development-server overrides also require a local server startup and
+WebSocket connection check; production consumer builds do not exercise that path. These workspace overrides do not
+propagate to consumers installing the published plugins.
+
 ```sh
 pnpm install
 pnpm lint
