@@ -36,7 +36,45 @@ export default defineConfig({
 The plugin has no runtime options. Keep defining content scripts through the normal Addon Bone entrypoints and manifest
 contract.
 
+## How it works
+
+On the initial install, the plugin:
+
+1. reads `content_scripts` from the built manifest;
+2. checks host access independently for every declaration;
+3. finds matching, fully loaded, non-discarded tabs, whether active or in the background;
+4. applies the declaration's match, exclude, and glob rules;
+5. injects immediately into unfrozen tabs and saves frozen tabs in a session-scoped pending queue;
+6. when a pending tab unfreezes, rechecks its current URL, manifest declaration, and host access before injection;
+7. removes the temporary tab listeners as soon as the pending queue is empty.
+
+Declarations run in manifest order. Eligible tabs within one declaration run independently, so one failed tab does
+not stop the others. Within one tab, the complete CSS file list is awaited before the complete JavaScript file list is
+attempted. A CSS failure is logged but does not prevent the JavaScript attempt.
+
+Firefox already catches up declarative content scripts during installation. The plugin's background entrypoint is
+excluded from Firefox builds to avoid duplicate execution and unnecessary runtime code.
+
+## Behavior and limits
+
+- Catch-up runs only for a fresh installation, not for an update or extension reload.
+- The plugin never activates, reloads, unfreezes, or restores a discarded tab.
+- Manifest V2 Chromium builds perform immediate catch-up only and do not use `storage.session` or deferred listeners.
+- A matching frozen tab is retained only in `storage.session`. Navigating, loading, discarding, or closing it removes
+  its pending entry; the browser's native declarative content-script behavior handles a new document load.
+- If a frozen tab changes documents during the brief scan between two content-script declarations, a later declaration
+  may be queued for that new document after its native content script has already run. This requires a thaw and
+  navigation during the install pass and can duplicate that declaration once.
+- Pending work is claimed before the plugin's programmatic injection to avoid duplicate attempts from repeated tab
+  events. If a browser process terminates in that narrow interval, the claimed attempt cannot be replayed.
+- `all_frames` uses the browser's native all-frame target. Top-level URL matching is exact; child-frame matching is
+  best effort without the `webNavigation` permission.
+- `run_at` cannot replay a lifecycle point that has already passed, so it is not forwarded during catch-up.
+
 ## Permissions
+
+<details>
+<summary>Permission details and store justifications</summary>
 
 The plugin's manifest hook adds only the browser- and manifest-specific permissions described below. It does not add
 the `tabs` permission: the consumer's existing content-script host access is sufficient to find and inspect matching
@@ -89,40 +127,7 @@ matching sites. Access is limited to the URL patterns declared by the extension.
 Adapt this baseline when Chrome Web Store or another browser marketplace asks for the extension's specific user-facing
 purpose or data usage.
 
-## How it works
-
-On the initial install, the plugin:
-
-1. reads `content_scripts` from the built manifest;
-2. checks host access independently for every declaration;
-3. finds matching, fully loaded, non-discarded tabs, whether active or in the background;
-4. applies the declaration's match, exclude, and glob rules;
-5. injects immediately into unfrozen tabs and saves frozen tabs in a session-scoped pending queue;
-6. when a pending tab unfreezes, rechecks its current URL, manifest declaration, and host access before injection;
-7. removes the temporary tab listeners as soon as the pending queue is empty.
-
-Declarations run in manifest order. Eligible tabs within one declaration run independently, so one failed tab does
-not stop the others. Within one tab, the complete CSS file list is awaited before the complete JavaScript file list is
-attempted. A CSS failure is logged but does not prevent the JavaScript attempt.
-
-Firefox already catches up declarative content scripts during installation. The plugin's background entrypoint is
-excluded from Firefox builds to avoid duplicate execution and unnecessary runtime code.
-
-## Behavior and limits
-
-- Catch-up runs only for a fresh installation, not for an update or extension reload.
-- The plugin never activates, reloads, unfreezes, or restores a discarded tab.
-- Manifest V2 Chromium builds perform immediate catch-up only and do not use `storage.session` or deferred listeners.
-- A matching frozen tab is retained only in `storage.session`. Navigating, loading, discarding, or closing it removes
-  its pending entry; the browser's native declarative content-script behavior handles a new document load.
-- If a frozen tab changes documents during the brief scan between two content-script declarations, a later declaration
-  may be queued for that new document after its native content script has already run. This requires a thaw and
-  navigation during the install pass and can duplicate that declaration once.
-- Pending work is claimed before the plugin's programmatic injection to avoid duplicate attempts from repeated tab
-  events. If a browser process terminates in that narrow interval, the claimed attempt cannot be replayed.
-- `all_frames` uses the browser's native all-frame target. Top-level URL matching is exact; child-frame matching is
-  best effort without the `webNavigation` permission.
-- `run_at` cannot replay a lifecycle point that has already passed, so it is not forwarded during catch-up.
+</details>
 
 Development, testing, and release infrastructure lives in the
 [Addon Bone Plugins monorepo](https://github.com/addon-stack/addon-bone-plugins).
