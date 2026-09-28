@@ -28,10 +28,29 @@ Every public package README follows the same concise, developer-facing order:
 3. npm version, monthly downloads, CI, and license badges using Shields.io's `for-the-badge` style;
 4. the package's purpose and the problem it solves;
 5. installation and a minimal working example;
-6. permissions added by the package, why each permission is required, and copy-ready baseline store justifications;
-7. host permissions required from the consumer, documented separately from permissions added by the package;
-8. a short explanation of the runtime flow, guarantees, and important limitations;
-9. a link back to this monorepo for development details.
+6. usage, available options and API, runtime flow, guarantees, and important limitations;
+7. permissions, including automatically added permissions, consumer-owned host access, and copy-ready baseline
+   store justifications;
+8. footer links to release history or migration notes where available, and to this monorepo for development details.
+
+Keep the `Permissions` heading visible and put its contents in a collapsed HTML `<details>` block. This keeps the
+installation, usage, and API documentation together while leaving permission details easy to find when preparing a
+store submission. Use the same wrapper in every package README:
+
+```md
+## Permissions
+
+<details>
+<summary>Permission details and store justifications</summary>
+
+Permission descriptions, consumer-owned access, and copy-ready store justifications go here.
+
+</details>
+```
+
+Leave blank lines after `</summary>` and before `</details>` so Markdown headings and code blocks render correctly.
+Document consumer-owned host access separately from permissions added by the plugin inside this section.
+Place footer links after the closing `</details>` tag so they remain visible when permissions are collapsed.
 
 Keep the first example minimal and introduce details progressively. Store justifications must describe the actual
 runtime behavior and must not claim a narrower scope than the implementation. A consumer may extend the suggested host

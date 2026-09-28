@@ -99,6 +99,9 @@
 - Use npm version, monthly downloads, CI, and license badges with Shields.io's `for-the-badge` style.
 - Document every automatically added permission, why it is needed, and a copy-ready baseline store justification.
   Document consumer-owned host access separately, and state explicitly when a package adds no permissions.
+- Place `Permissions` after usage, API, behavior, and limitations. Keep the heading visible and collapse its contents
+  with `<details>` and the shared summary from `CONTRIBUTING.md`. Put release, migration, and development links in a
+  visible footer after the closing `</details>` tag.
 - Keep the first example minimal and explain runtime flow, guarantees, and limitations in plain developer-facing prose.
 
 ## Validation
