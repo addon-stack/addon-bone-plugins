@@ -40,50 +40,20 @@ import {getRemoteConfig} from "@adnbn/plugin-remote-config/api";
 const config = await getRemoteConfig();
 ```
 
-## Permissions
-
-On Chrome and Firefox MV2/MV3, the plugin adds `storage` and host access for the resolved endpoint. It adds no other
-permissions or optional permission requests. With no endpoint, only `storage` is declared and reads return defaults.
-
-### `storage`
-
-Caches the response, URL, and refresh metadata in ordinary `storage.local` under `@adnbn/plugin-remote-config:cache`.
-The cache is neither encrypted nor synchronized.
-
-Suggested store justification:
-
-```text
-The storage permission caches remote configuration and refresh metadata locally so configured features keep working
-when the server is unavailable. This data is not synchronized between devices.
-```
-
-### Endpoint host access
-
-An endpoint such as `https://example.com/config.json` adds `https://example.com/*`: `host_permissions` in MV3 and
-`permissions` in MV2. Access covers the host, not just the JSON path.
-
-Suggested store justification:
-
-```text
-Host access lets the extension's background service retrieve JSON settings from its configuration server to configure
-its features. The response contains data, not executable code.
-```
-
-### Consumer-owned access
-
-Other hosts, including redirect destinations, require consumer-owned access. Custom CSP must permit the request.
-Adapt the store justifications if your extension uses these permissions for additional features.
-
 ## How it works
 
 - Options and environment values are resolved once at builder startup.
 - Reads use the same-URL cache until TTL expires; the next read refreshes it. Concurrent reads share one request.
 - Refreshes bypass the browser's HTTP cache by default. The `cache` option controls HTTP caching independently of TTL.
 - Successful responses merge deeply with the original defaults, never with previous remote values. Missing fields
-  keep defaults; arrays replace whole; `false`, `0`, `""`, and `null` are preserved. An empty object restores defaults.
+  keep defaults; arrays replace whole; `false`, `0`, and `""` are preserved. Explicit `null` replaces a default.
+  An empty object restores defaults.
 - Failed refreshes retain the last working response, or defaults if none exists. Without either, reads return `{}`.
   Retries respect `retryDelay`.
   There is no background polling or maximum stale-cache age.
+- Results are independent copies.
+- Network and storage failures are handled separately. Failed persistence leaves an in-memory cache, but configuration
+  and retry metadata may be lost after a service-worker restart.
 
 For example, defaults `{banner: {enabled: false, text: "default"}}` plus `{banner: {text: "new"}}` produce
 `{banner: {enabled: false, text: "new"}}`.
@@ -134,6 +104,9 @@ const enabled = await getRemoteConfig("featureFlag"); // boolean
 const label = await getRemoteConfig(config => config.featureFlag ? "on" : "off");
 ```
 
+TypeScript checks supplied defaults, not server data or the presence of required fields at runtime. Responses must be
+JSON objects matching your schema; replacement array elements must contain their required fields.
+
 Defaults may omit required root and nested fields; supplied values must match the schema. For fields with no default
 that may be absent before loading or when requests fail, prefer optional properties (`field?: ...`). Arrays and tuples, when
 supplied, retain their element types. Paths support numeric array indices
@@ -144,6 +117,9 @@ behavior, independently of defaults. An absent value returns `undefined` at runt
 
 Use selectors for keys containing dots, brackets, or backslashes, reserved keys (`__proto__`, `prototype`,
 `constructor`), and values typed as `unknown` or `any`. Selection is local and always reads the full service result.
+Selectors receive an object but can throw when directly accessing an absent nested branch; use optional chaining as
+needed.
+
 `getRemoteConfigOptions()` exposes resolved build-time options; `/service` is the framework's background entrypoint.
 
 ## React
@@ -164,16 +140,47 @@ The hook starts with defaults or `{}`, fetches on mount, and ignores results aft
 initially return `undefined`. Changing the selection uses
 current state without refetching. Selectors must be synchronous; the hook neither polls nor subscribes to updates.
 
-## Limits and upgrading
+## Permissions
 
-- TypeScript checks supplied defaults, not server data or the presence of required fields at runtime. Selectors
-  receive an object but can throw when directly accessing an absent nested branch; use optional chaining as needed.
-  Responses must be JSON objects with values matching your schema;
-  explicit `null` replaces a default, and replacement array elements must contain their required fields.
-- Results are independent copies. Network and storage failures are handled separately; failed persistence leaves an
-  in-memory cache, but configuration and retry metadata may be lost after a service-worker restart.
-- **Upgrading from 0.3.x:** use `/react` instead of `/hooks` and augment `RemoteConfig` instead
-  of overriding it with a generic. Old caches are not migrated. Credentials now default to `"omit"`.
+<details>
+<summary>Permission details and store justifications</summary>
+
+On Chrome and Firefox MV2/MV3, the plugin adds `storage` and host access for the resolved endpoint. It adds no other
+permissions or optional permission requests. With no endpoint, only `storage` is declared and reads return defaults.
+
+### `storage`
+
+Caches the response, URL, and refresh metadata in ordinary `storage.local` under `@adnbn/plugin-remote-config:cache`.
+The cache is neither encrypted nor synchronized.
+
+Suggested store justification:
+
+```text
+The storage permission caches remote configuration and refresh metadata locally so configured features keep working
+when the server is unavailable. This data is not synchronized between devices.
+```
+
+### Endpoint host access
+
+An endpoint such as `https://example.com/config.json` adds `https://example.com/*`: `host_permissions` in MV3 and
+`permissions` in MV2. Access covers the host, not just the JSON path.
+
+Suggested store justification:
+
+```text
+Host access lets the extension's background service retrieve JSON settings from its configuration server to configure
+its features. The response contains data, not executable code.
+```
+
+### Consumer-owned access
+
+Other hosts, including redirect destinations, require consumer-owned access. Custom CSP must permit the request.
+Adapt the store justifications if your extension uses these permissions for additional features.
+
+</details>
+
+For release history and migration notes, see the
+[changelog](https://github.com/addon-stack/addon-bone-plugins/blob/main/packages/%40adnbn/plugin-remote-config/CHANGELOG.md).
 
 For development, testing, and releases, see the
 [monorepo contributing guide](https://github.com/addon-stack/addon-bone-plugins/blob/main/CONTRIBUTING.md).
