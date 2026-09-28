@@ -87,6 +87,25 @@ it("omits request credentials by default", async () => {
     expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({credentials: "omit"}));
 });
 
+it("bypasses the browser HTTP cache by default while preserving the plugin TTL", async () => {
+    const instance = service({ttl: 1});
+    await expect(instance.get()).resolves.toEqual(remote);
+    expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({cache: "no-store"}));
+    await expect(instance.get()).resolves.toEqual(remote);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    now += 60_000;
+    await instance.get();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenLastCalledWith(url, expect.objectContaining({cache: "no-store"}));
+});
+
+it.each(["default", "no-store", "reload", "no-cache", "force-cache"] as const)(
+    "uses the configured browser HTTP cache policy: %s", async cache => {
+        await service({cache}).get();
+        expect(fetchMock).toHaveBeenCalledWith(url, expect.objectContaining({cache}));
+    }
+);
+
 it.each(["omit", "same-origin", "include"] as const)(
     "uses the configured credentials policy: %s", async credentials => {
         await service({credentials}).get();

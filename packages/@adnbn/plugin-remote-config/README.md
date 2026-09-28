@@ -78,6 +78,7 @@ Adapt the store justifications if your extension uses these permissions for addi
 
 - Options and environment values are resolved once at builder startup.
 - Reads use the same-URL cache until TTL expires; the next read refreshes it. Concurrent reads share one request.
+- Refreshes bypass the browser's HTTP cache by default. The `cache` option controls HTTP caching independently of TTL.
 - Successful responses merge deeply with the original defaults, never with previous remote values. Missing fields
   keep defaults; arrays replace whole; `false`, `0`, `""`, and `null` are preserved. An empty object restores defaults.
 - Failed refreshes retain the last working response, or defaults if none exists. Without either, reads return `{}`.
@@ -97,12 +98,19 @@ For example, defaults `{banner: {enabled: false, text: "default"}}` plus `{banne
 | `timeout` | `10000` | Request and JSON-body timeout in milliseconds. Must be positive and within timer limits. |
 | `retryDelay` | `60000` | Delay after a failed refresh, in milliseconds. Zero disables it. |
 | `credentials` | `"omit"` | `"omit"`, `"same-origin"`, or `"include"`; use `"include"` for cookie authentication. |
+| `cache` | `"no-store"` | Browser HTTP cache policy: `"default"`, `"no-store"`, `"reload"`, `"no-cache"`, or `"force-cache"`. |
 
 Each option accepts a build-time getter. Numbers must be finite; TTL and retry delay cannot be negative.
 `remoteConfig()` uses `REMOTE_CONFIG_URL` without requiring defaults. Omitting `config`, passing `undefined`, or
 returning `undefined` from its getter uses `{}`; explicit `null` or an array is not a valid defaults object.
 A missing environment variable warns at startup and disables fetching. An empty URL or a URL getter returning
 `undefined` disables it silently. Changing the URL invalidates the previous cache.
+
+`cache: "no-store"` bypasses the browser's HTTP cache without reading or updating it. The plugin still stores the last
+working configuration in `storage.local` and reuses it according to `ttl`, including as a fallback after failed refreshes.
+Use `"no-cache"` to revalidate HTTP-cached responses, `"reload"` to bypass and update the HTTP cache, or `"default"` to
+restore the browser's normal HTTP caching behavior. `"force-cache"` may reuse stale HTTP responses. `"only-if-cached"`
+is not supported because it requires same-origin requests, while this plugin fetches remote HTTP(S) endpoints.
 
 ## TypeScript and selection
 

@@ -11,7 +11,9 @@ export const isConfig = (value: unknown): value is Record<string, unknown> => {
 };
 
 export const normalizeOptions = (options: RemoteConfigOptions): ResolvedRemoteConfigOptions => {
-    const {url, config = {}, ttl = 1440, timeout = 10_000, retryDelay = 60_000, credentials = "omit"} = options;
+    const {
+        url, config = {}, ttl = 1440, timeout = 10_000, retryDelay = 60_000, credentials = "omit", cache = "no-store",
+    } = options;
 
     if (!isConfig(config)) {
         throw new TypeError("Remote config defaults must be a JSON object");
@@ -32,6 +34,10 @@ export const normalizeOptions = (options: RemoteConfigOptions): ResolvedRemoteCo
         throw new TypeError("Remote config credentials must be omit, same-origin, or include");
     }
 
+    if (!["default", "no-store", "reload", "no-cache", "force-cache"].includes(cache)) {
+        throw new TypeError("Remote config cache must be default, no-store, reload, no-cache, or force-cache");
+    }
+
     if (url !== undefined && url !== "") {
         const parsed = new URL(url);
 
@@ -40,5 +46,5 @@ export const normalizeOptions = (options: RemoteConfigOptions): ResolvedRemoteCo
         }
     }
 
-    return {config, ttl, url: url || undefined, timeout, retryDelay, credentials};
+    return {config, ttl, url: url || undefined, timeout, retryDelay, credentials, cache};
 };

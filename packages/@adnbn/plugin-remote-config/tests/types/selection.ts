@@ -67,6 +67,12 @@ export function checkHelperTypes(
     remoteConfig({url: "CONFIG_URL"});
     remoteConfig({config: {nested: {a: 1}}});
     remoteConfig({config: () => undefined});
+    remoteConfig({cache: "no-store"});
+    remoteConfig({cache: () => "no-cache"});
+    // @ts-expect-error Only supported HTTP cache policies are accepted.
+    remoteConfig({cache: "unsupported"});
+    // @ts-expect-error only-if-cached requires same-origin requests, unlike remote HTTP(S) endpoints.
+    remoteConfig({cache: "only-if-cached"});
     // @ts-expect-error Supplied defaults must still follow the augmented field types.
     remoteConfig({config: {nested: {a: "wrong"}}});
     // @ts-expect-error Supplied array elements retain their schema.

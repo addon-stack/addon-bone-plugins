@@ -130,8 +130,9 @@ it causes the framework parser to inline the package's empty base interface as `
 `pnpm check:consumer` and `pnpm check:browser` run both migrated packages. For a narrow runtime check, use
 `node tools/smoke/plugin-remote-config-browser.mjs`; it starts an isolated local endpoint and disposable browser
 profiles. It tests failed refreshes, recovery, deep partial responses, typed dot-path and selector access, React
-selection changes without refetching, and Chrome service-worker restarts. A separate build without defaults uses a
-clean profile and holds the first response until React's empty initial config and missing selections are checked.
+selection changes without refetching, and Chrome service-worker restarts. Config responses allow HTTP caching for an
+hour; the smoke checks that the default `cache: "no-store"` still reaches the server on refresh. A separate build without
+defaults uses a clean profile and holds the first response until React's empty initial config and missing selections are checked.
 The consumer type checks accept absent and partial defaults, reject invalid paths and wrongly typed defaults, and
 preserve the augmented result types and standard `Get` behavior for optional fields, arrays, and dictionaries.
 

@@ -61,6 +61,9 @@ export interface RemoteConfigOptions {
 
     /** Fetch credentials policy. Defaults to omit; use include for cookie-authenticated endpoints. */
     credentials?: "omit" | "same-origin" | "include";
+
+    /** Browser HTTP cache policy. Defaults to no-store; independent of the plugin's persistent cache and TTL. */
+    cache?: "default" | "no-store" | "reload" | "no-cache" | "force-cache";
 }
 
 /** Runtime options with defaults applied and the environment variable resolved. */

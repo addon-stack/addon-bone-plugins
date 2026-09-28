@@ -117,6 +117,7 @@ it.each([
     {retryDelay: -1}, {retryDelay: Infinity}, {url: "ftp://config.example/config.json"},
     {url: "https://user:password@config.example/config.json"},
     {credentials: "unsupported" as any},
+    {cache: "unsupported" as any}, {cache: "only-if-cached" as any}, {cache: null as any}, {cache: false as any},
 ])("rejects invalid build parameters at startup: %j", options => {
     const plugin = pluginFactory({config: {}, ...options}) as unknown as TestPlugin;
     expect(() => plugin.startup({config: {}})).toThrow();
@@ -138,9 +139,20 @@ it("resolves the default environment variable when plugin options are omitted", 
     expect(getEnv).toHaveBeenCalledWith("REMOTE_CONFIG_URL");
 
     expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__)).toMatchObject({
-        url: "https://config.example/config.json", config: {},
+        url: "https://config.example/config.json", config: {}, cache: "no-store",
     });
 });
+
+it.each(["default", "no-store", "reload", "no-cache", "force-cache"] as const)(
+    "resolves the HTTP cache getter once and embeds its policy: %s", policy => {
+        const cache = jest.fn(() => policy);
+        const plugin = pluginFactory({url: "", cache}) as unknown as TestPlugin;
+        plugin.startup({config: {}});
+        expect(JSON.parse(definitions(plugin).__REMOTE_CONFIG_OPTIONS__).cache).toBe(policy);
+        definitions(plugin);
+        expect(cache).toHaveBeenCalledTimes(1);
+    }
+);
 
 it.each([{}, {config: undefined}, {config: {}}, {config: () => undefined}])(
     "normalizes absent or empty defaults at startup: %j", options => {

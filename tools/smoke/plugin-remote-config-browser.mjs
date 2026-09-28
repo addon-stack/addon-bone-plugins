@@ -35,7 +35,7 @@ const server = createServer((request, response) => {
             const config = mode === "array" ? [] : mode === "partial" ? {label: "partial", nested: {a: 30}}
                 : expectedRemote;
 
-            response.writeHead(200, {"Content-Type": "application/json", "Cache-Control": "no-store"});
+            response.writeHead(200, {"Content-Type": "application/json", "Cache-Control": "public, max-age=3600"});
             response.end(JSON.stringify(config));
         }
     } else {
@@ -115,7 +115,7 @@ const scenarios = async (evaluate, restart, inspect, withoutDefaults) => {
         mode = "remote";
 
         for (const response of pendingResponses) {
-            response.writeHead(200, {"Content-Type": "application/json", "Cache-Control": "no-store"});
+            response.writeHead(200, {"Content-Type": "application/json", "Cache-Control": "public, max-age=3600"});
             response.end(JSON.stringify(expectedRemote));
         }
     }
@@ -127,7 +127,9 @@ const scenarios = async (evaluate, restart, inspect, withoutDefaults) => {
     }, "React hook to receive the remote configuration");
 
     assert(await evaluate("document.cookie.includes('remote_config_session=smoke')"), "Test site cookie is missing");
+    const requestsBeforeRead = requestCookies.length;
     equal(await readConfig(evaluate), expectedRemote, "Initial configuration");
+    assert(requestCookies.length > requestsBeforeRead, "A refresh must reach the server despite a cacheable response");
 
     await waitFor(async () => await evaluate(
         `document.getElementById('remote-config-hook-path')?.textContent === '10'`

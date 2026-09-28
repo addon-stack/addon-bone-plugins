@@ -75,7 +75,9 @@ class RemoteConfigService {
         });
 
         const request = async () => {
-            const response = await fetch(url, {credentials: this.options.credentials, signal: controller.signal});
+            const response = await fetch(url, {
+                credentials: this.options.credentials, cache: this.options.cache, signal: controller.signal,
+            });
 
             if (!response.ok) {
                 throw new Error(`Response error status: ${response.status} - ${response.statusText}`);
