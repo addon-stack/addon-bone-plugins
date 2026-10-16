@@ -27,17 +27,18 @@
     "serve:remote-config": "node ./tools/smoke/plugin-remote-config-site.mjs",
     "test": "pnpm exec nx run-many -t test",
     "test:coverage": "pnpm exec nx run-many -t test:coverage",
+    "test:release": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config tools/release/jest.config.cjs --runInBand",
     "test:tooling": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config tools/eslint/jest.config.cjs --runInBand",
     "typecheck": "pnpm typecheck:tests && pnpm exec nx run-many -t typecheck",
     "typecheck:tests": "tsc -p tests/tsconfig.json --noEmit",
     "types": "pnpm exec nx run-many -t types",
-    "verify": "pnpm lint && pnpm test:tooling && pnpm audit:security && pnpm check && pnpm check:consumer"
+    "verify": "pnpm lint && pnpm test:tooling && pnpm test:release && pnpm audit:security && pnpm check && pnpm check:consumer"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.3",
     "@commitlint/config-conventional": "21.2.3",
     "@eslint/js": "^10.0.1",
-    "@nx/js": "23.2.1",
+    "@nx/js": "23.3.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@swc/core": "^1.16.2",
     "@swc/jest": "^0.2.36",
@@ -51,7 +52,7 @@
     "husky": "9.1.7",
     "jest": "^30.5.2",
     "lint-staged": "^17.6.0",
-    "nx": "23.2.1",
+    "nx": "23.3.0",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.70.1"
   }

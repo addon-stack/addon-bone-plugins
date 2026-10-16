@@ -16,7 +16,7 @@ concurrency:
 jobs:
   actionlint:
     name: Workflow lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Checkout
@@ -36,9 +36,28 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
 
+  renovate-config:
+    name: Renovate config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Validate Renovate configuration
+        run: npx --yes --package renovate@44.155.8 renovate-config-validator --strict renovate.json
+
   checks:
     name: Checks (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -110,6 +129,12 @@ jobs:
         env:
           CI: "true"
 
+      - name: Preview independent release versions
+        run: pnpm exec nx release version --dry-run --git-commit=false --git-tag=false --stage-changes=false
+        env:
+          CI: "true"
+          HUSKY: "0"
+
       - name: Verify Chrome MV3 and Firefox MV2 runtimes
         run: pnpm check:browser
         env:
@@ -118,16 +143,18 @@ jobs:
   verify:
     name: verify
     if: always()
-    needs: [actionlint, checks]
-    runs-on: ubuntu-latest
+    needs: [actionlint, renovate-config, checks]
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}
     env:
       ACTIONLINT_RESULT: ${{ needs.actionlint.result }}
+      RENOVATE_RESULT: ${{ needs.renovate-config.result }}
       CHECKS_RESULT: ${{ needs.checks.result }}
     steps:
       - name: Require every CI job to pass
         shell: bash
         run: |
           test "$ACTIONLINT_RESULT" = "success"
+          test "$RENOVATE_RESULT" = "success"
           test "$CHECKS_RESULT" = "success"

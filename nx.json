@@ -9,7 +9,6 @@
     "sharedGlobals": [
       "{workspaceRoot}/.editorconfig",
       "{workspaceRoot}/package.json",
-      "{workspaceRoot}/pnpm-lock.yaml",
       "{workspaceRoot}/pnpm-workspace.yaml",
       "{workspaceRoot}/.npmrc",
       "{workspaceRoot}/tsconfig.base.json",
@@ -43,6 +42,21 @@
             "title": "💅 Refactors",
             "hidden": false
           }
+        },
+        "deps": {
+          "semverBump": "patch",
+          "changelog": {
+            "title": "📦 Dependencies",
+            "hidden": false
+          }
+        },
+        "ci": {
+          "semverBump": "none",
+          "changelog": false
+        },
+        "chore": {
+          "semverBump": "none",
+          "changelog": false
         }
       },
       "useCommitScope": true
@@ -51,11 +65,13 @@
       "conventionalCommits": true,
       "adjustSemverBumpsForZeroMajorVersion": false,
       "updateDependents": "always",
-      "versionActions": "./tools/release/VersionActions.cjs"
+      "versionActions": "./tools/release/VersionActions.cjs",
+      "preVersionCommand": "node tools/release/check-dependency-history.mjs"
     },
     "changelog": {
       "projectChangelogs": {
-        "createRelease": "github"
+        "createRelease": "github",
+        "renderer": "{workspaceRoot}/tools/release/ChangelogRenderer.cjs"
       }
     },
     "git": {
@@ -64,5 +80,10 @@
       "commitMessage": "chore(release): publish {version}"
     }
   },
-  "analytics": false
+  "analytics": false,
+  "pluginsConfig": {
+    "@nx/js": {
+      "projectsAffectedByDependencyUpdates": "auto"
+    }
+  }
 }

@@ -199,3 +199,117 @@ smoke uses `10000` for the held-response scenario without defaults.
 
 Do not manually edit package versions, create package tags, or publish packages. Nx Release performs independent
 versioning and publication after changes reach `main`.
+
+
+### Independent dependency releases
+
+`nx.json` enables `pluginsConfig.@nx/js.projectsAffectedByDependencyUpdates: "auto"`. The shared
+`pnpm-lock.yaml` is deliberately absent from `namedInputs.sharedGlobals`: Nx compares resolved dependencies and
+walks their consumers instead of treating every lockfile edit as a change to every plugin. Nx still hashes external
+dependencies for cached targets. CI continues checking **all** plugins and both packed consumer fixtures.
+
+Examples for a `deps` commit:
+
+| Changed dependency | Packages receiving a patch |
+| --- | --- |
+| `@addon-core/inject-css` | `@adnbn/plugin-reg-cs` |
+| `dot-prop` | `@adnbn/plugin-remote-config` |
+| Shared `@addon-core/browser` or Chrome types | Both plugins |
+| No dependency changes | None |
+
+`deps` produces a patch and appears under **📦 Dependencies** in each affected package's changelog. Ordinary
+`ci` and `chore` commits do not release packages. `fix` still produces a patch, `feat` a minor, and breaking changes
+below 1.0 retain the existing minor-bump policy. An explicit breaking-change marker still takes precedence.
+Actual workspace dependents remain eligible for updates through `updateDependents: "always"`.
+
+Nx resolves changes since **each package's own latest release tag**, not simply since the last repository release.
+`tools/release/check-dependency-history.mjs` runs before versioning, including dry-runs. It rejects shallow history,
+missing package tags, and lockfile changes for which Nx would fall back to marking every project affected. This can
+also happen when a removed dependency is absent from the current dependency graph. A failed preflight stops before
+version edits, tags, GitHub releases or publication; it must be investigated rather than bypassed. Fetch full history
+and tags first, then check the reported commit and lockfile. A parser/removal limitation requires a reviewed Nx fix
+and a regression test before retrying. New packages need an explicit first-release setup before this tagged-release
+workflow can include them.
+
+The custom `ChangelogRenderer.cjs` supplements Nx's path-based changelog filtering with dependency commits
+attributed by the same affected graph, including lockfile-only updates. It preserves Nx's normal rendering and
+avoids duplicate entries for commits that also change a package manifest.
+
+The guard and renderer use the pinned Nx version's parser and affected-project locator. Upgrade `nx` and `@nx/js` together and
+run `pnpm test:release` when doing so. The suite creates disposable Git repositories, executes real Nx version and
+changelog dry-runs, and checks isolated/shared dependency updates, non-release commits, missing history and tags,
+malformed lockfiles, and the existing pre-1.0 breaking-change policy. It is included in `pnpm verify`.
+
+### Automated dependency updates
+
+The **Update Dependencies** workflow runs on Sundays at **02:15 America/Los_Angeles**. To start immediately, open
+**Actions → Update Dependencies → Run workflow** on `main`. The workflow itself controls the schedule; Renovate has
+no additional scheduling window that could block a manual run. Dependencies must have been published for at least
+one day, consistent with the pnpm supply-chain cooldown.
+
+Renovate reads the root manifest, every `packages/@adnbn/*/package.json`, the consumer fixture manifests and the
+single pnpm workspace lockfile. It uses Node 24 and the workspace's pinned pnpm 11.24.0.
+
+- Production dependencies of public plugins and Chrome types are grouped in `deps/update-dependencies`, with a
+  `deps: ...` commit. This includes dependencies unique to a single plugin.
+- Other development dependencies are handled separately with `chore(deps): ...` commits. Root tooling changes do
+  not request package releases.
+- Addon Bone (`adnbn`) and Rspack (`@rspack/*`) stay on their current versions. Framework/toolchain upgrades
+  require a separate compatibility review and are excluded from automatic updates in every workspace manifest.
+- Nx and its plugins require manual coordinated upgrades and migrations. Peer ranges, workspace references,
+  package-manager versions and existing security overrides are also maintained manually.
+- Renovate updates the lockfile with the manifests, rebases an open branch when it falls behind `main`, and creates
+  no PR if there are no eligible updates. Automatic merging and standalone lockfile maintenance are disabled.
+
+Every PR must pass `verify`, including frozen-lockfile installation, lint, tooling and release regression tests,
+security audit, package tests/type checks, tarball checks, packed consumer builds, browser smoke tests, workflow
+lint and Renovate config validation. CI also previews release versions with write operations disabled. Failed
+checks leave the PR open for investigation; they do not merge or publish anything.
+
+After reviewing and merging a dependency PR, start **Actions → Release → Run workflow** on `main` manually. The
+release pipeline computes each affected version, creates its changelog/tag/GitHub release and publishes through the
+existing release App and npm OIDC setup. The Renovate App does not publish packages.
+
+### GitHub setup for Renovate
+
+Reuse the organization's **addon-stack-dependency-updates** GitHub App:
+
+1. Add `addon-stack/addon-bone-plugins` to the installation's selected repositories. Keep repository permissions
+   **Contents: read/write**, **Pull requests: read/write**, **Issues: read/write**, **Checks: read**,
+   **Commit statuses: read**, and GitHub's mandatory **Metadata: read**.
+2. Grant this repository access to the organization Actions variable `RENOVATE_APP_CLIENT_ID` (or create it at
+   repository scope), using the existing App's client ID.
+3. Grant it access to the organization Actions secret `RENOVATE_APP_PRIVATE_KEY`, or store the same App's private
+   key as a repository Actions secret. Never commit the key. No new App or private key is necessary.
+4. Require the **verify** status check for PR merges into `main`. Keep the existing release App's ruleset/bypass
+   access so its automated release commit can be pushed. This is separate from Renovate permissions.
+5. Once this configuration reaches `main`, run **Update Dependencies** manually and review its logs and any PR.
+
+The App token is scoped to this repository even when the shared App is installed in several repositories. The
+workflow checks for missing credentials before starting Renovate. `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY`, the
+`release` environment and Trusted Publishing settings remain the existing manual release workflow's credentials.
+
+
+### Security audit status (2026-10-14)
+
+The compatible security refresh updates Nx and `@nx/js` together from 23.2.1 to 23.3.0 (the Nx migrator reports no
+required migrations), plus the vulnerable transitive `brace-expansion`, `compression`, `engine.io`, `proxy-addr`,
+`shell-quote`, `source-map-js`, `fast-uri` and their compatible parents. `fast-uri` is locked to 3.1.8, which satisfies
+Ajv's `^3.0.1` range; its registry integrity and the complete lockfile were verified by `pnpm install --frozen-lockfile`.
+No peer ranges, public plugin versions or existing overrides were changed, and no new overrides were added.
+
+Audit findings decreased from **2 critical / 19 high / 11 moderate** to **0 critical / 3 high / 6 moderate / 3 low**.
+The remaining findings are in development/release tooling:
+
+- Nx 23.3.0 pins `undici` to exactly 7.29.0; its advisories are fixed in 7.29.1, which requires an upstream Nx update
+  or an explicit override. The high advisories are
+  [GHSA-rfgv-xxqx-mfg5](https://github.com/advisories/GHSA-rfgv-xxqx-mfg5) and
+  [GHSA-w293-vg96-wgc3](https://github.com/advisories/GHSA-w293-vg96-wgc3).
+- `braces` 3.0.3, used through the framework's development server/build tooling, has no published fixed version for
+  [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+- `sprintf-js` 1.0.3, through Jest's coverage configuration loader, has no published fixed version for the moderate
+  [GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c).
+
+`pnpm audit:security` and therefore `pnpm verify`, CI and the manual release workflow **remain blocked** by the
+three high findings. The audit threshold has not been lowered and advisories have not been suppressed. Resolve
+these upstream constraints before expecting a green CI/release; functional test success does not waive the audit.

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "baseBranchPatterns": [
+    "main"
+  ],
+  "branchPrefix": "deps/",
+  "enabledManagers": [
+    "npm"
+  ],
+  "includePaths": [
+    "package.json",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml",
+    "packages/@adnbn/*/package.json",
+    "tests/fixtures/*/package.json"
+  ],
+  "automerge": false,
+  "dependencyDashboard": false,
+  "ignoreUnstable": true,
+  "prCreation": "immediate",
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "deps",
+  "semanticCommitScope": null,
+  "separateMajorMinor": false,
+  "separateMinorPatch": false,
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "packageRules": [
+    {
+      "description": "Disable updates unless a rule below explicitly enables them.",
+      "matchPackageNames": [
+        "*"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Update production dependencies across all public plugins in one PR.",
+      "matchFileNames": [
+        "packages/@adnbn/*/package.json"
+      ],
+      "matchDepTypes": [
+        "dependencies",
+        "optionalDependencies"
+      ],
+      "enabled": true,
+      "rangeStrategy": "bump",
+      "groupName": "dependencies",
+      "groupSlug": "update-dependencies",
+      "groupSingleUpdates": true
+    },
+    {
+      "description": "Keep Chrome types aligned across plugins, root tooling and consumer fixtures.",
+      "matchPackageNames": [
+        "@types/chrome"
+      ],
+      "matchDepTypes": [
+        "dependencies",
+        "devDependencies"
+      ],
+      "enabled": true,
+      "rangeStrategy": "bump",
+      "groupName": "dependencies",
+      "groupSlug": "update-dependencies",
+      "groupSingleUpdates": true
+    },
+    {
+      "description": "Keep development tooling in a separate PR that does not release plugins.",
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchPackageNames": [
+        "!@types/chrome"
+      ],
+      "enabled": true,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps",
+      "rangeStrategy": "bump",
+      "groupName": "development dependencies",
+      "groupSlug": "update-dev-dependencies",
+      "groupSingleUpdates": true,
+      "separateMajorMinor": true
+    },
+    {
+      "description": "Nx upgrades can require migrations and are maintained manually as a matched pair.",
+      "matchPackageNames": [
+        "nx",
+        "@nx/*"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Addon Bone and its Rspack toolchain are upgraded manually after compatibility review.",
+      "matchPackageNames": [
+        "adnbn",
+        "@rspack/*"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Peer contracts, local workspace references and security overrides require manual review.",
+      "matchDepTypes": [
+        "peerDependencies",
+        "overrides",
+        "pnpm.overrides",
+        "packageManager"
+      ],
+      "enabled": false
+    },
+    {
+      "matchCurrentValue": "/^workspace:/",
+      "matchPackageNames": [
+        "*"
+      ],
+      "enabled": false
+    }
+  ],
+  "ignorePaths": [],
+  "constraints": {
+    "node": "24",
+    "pnpm": "11.24.0"
+  },
+  "minimumReleaseAge": "1 day"
+}
