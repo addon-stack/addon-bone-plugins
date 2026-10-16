@@ -25,6 +25,11 @@ export const setupBrowserHarness = (
         profile: "chrome",
     });
 
+    // New Browser harness versions expose storage by default, even for this no-permission fixture.
+    if (!withStorage) {
+        Reflect.deleteProperty(chrome, "storage");
+    }
+
     const storage = withStorage ? createStorageHarness() : undefined;
     const restoreStorage = storage ? installStorageHarness(storage) : undefined;
 

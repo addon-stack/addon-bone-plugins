@@ -290,26 +290,37 @@ workflow checks for missing credentials before starting Renovate. `RELEASE_APP_I
 `release` environment and Trusted Publishing settings remain the existing manual release workflow's credentials.
 
 
-### Security audit status (2026-10-14)
+### Security audit status (2026-10-16)
 
-The compatible security refresh updates Nx and `@nx/js` together from 23.2.1 to 23.3.0 (the Nx migrator reports no
-required migrations), plus the vulnerable transitive `brace-expansion`, `compression`, `engine.io`, `proxy-addr`,
-`shell-quote`, `source-map-js`, `fast-uri` and their compatible parents. `fast-uri` is locked to 3.1.8, which satisfies
-Ajv's `^3.0.1` range; its registry integrity and the complete lockfile were verified by `pnpm install --frozen-lockfile`.
-No peer ranges, public plugin versions or existing overrides were changed, and no new overrides were added.
+Nx 23.3.0 pins `undici` to 7.29.0. A parent-scoped override replaces only that version with 7.29.1 to fix
+[GHSA-rfgv-xxqx-mfg5](https://github.com/advisories/GHSA-rfgv-xxqx-mfg5) and
+[GHSA-w293-vg96-wgc3](https://github.com/advisories/GHSA-w293-vg96-wgc3). Remove the override when Nx requires a
+patched version. The framework remains on 0.10.0; public package versions and peer ranges are unchanged.
 
-Audit findings decreased from **2 critical / 19 high / 11 moderate** to **0 critical / 3 high / 6 moderate / 3 low**.
-The remaining findings are in development/release tooling:
+`pnpm audit:security` still audits the full workspace and blocks high/critical findings. There is one temporary
+exception for [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in `braces` 3.0.3, which has
+no published fix. This exception does not fix the dependency or declare it safe for arbitrary consumers.
 
-- Nx 23.3.0 pins `undici` to exactly 7.29.0; its advisories are fixed in 7.29.1, which requires an upstream Nx update
-  or an explicit override. The high advisories are
-  [GHSA-rfgv-xxqx-mfg5](https://github.com/advisories/GHSA-rfgv-xxqx-mfg5) and
-  [GHSA-w293-vg96-wgc3](https://github.com/advisories/GHSA-w293-vg96-wgc3).
-- `braces` 3.0.3, used through the framework's development server/build tooling, has no published fixed version for
-  [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
-- `sprintf-js` 1.0.3, through Jest's coverage configuration loader, has no published fixed version for the moderate
-  [GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c).
+The exception applies to the current repository's CI and release inputs:
 
-`pnpm audit:security` and therefore `pnpm verify`, CI and the manual release workflow **remain blocked** by the
-three high findings. The audit threshold has not been lowered and advisories have not been suppressed. Resolve
-these upstream constraints before expecting a green CI/release; functional test success does not waive the audit.
+- The vulnerable operation recursively parses/expands deeply nested **patterns** supplied by an attacker.
+- All current lockfile paths to `braces` pass through `adnbn` -> `@rspack/cli` -> `@rspack/dev-server`, then
+  `chokidar` 3.6.0 or `http-proxy-middleware` 2.0.10 -> `micromatch` 4.0.8 (including the webpack-dev-server paths).
+- The packed-consumer and browser checks invoke `adnbn build` with checked-in fixture configuration. The installed
+  framework's build command uses `compiler.run()` and closes the compiler. CI/release do not start Rspack's dev server
+  or accept user-supplied watcher/proxy patterns. Watch roots and configuration belong to the checked-out source;
+  anyone who changes executable build configuration already controls code executed by that build.
+- The smoke HTTP servers use Node's HTTP server on loopback and exact route comparisons, without glob parsing.
+  In the installed proxy middleware, `matchSingleGlobPath(pattern, uri)` passes the HTTP pathname as the string to
+  match and the configured context as the pattern. A request pathname is not parsed as a brace pattern.
+- These server/watcher dependencies are build tooling, not imported by the plugins' extension runtime. An application
+  using these packages to process untrusted patterns, or exposing a different dev-server configuration, requires its
+  own assessment; this repository's audit exception is not included in published plugin manifests.
+
+Reassess this exception by **2026-11-16**, when the framework/dev-server/proxy dependency chain changes, or before
+introducing external watch roots, patterns or server configuration. Remove it when a fixed `braces` version can be
+resolved. Keep the exception limited to this GHSA; do not ignore the whole package, all unfixable findings or all dev
+dependencies. This review date is a manual deadline, not an automatically enforced expiry.
+
+Moderate/low advisories, including `sprintf-js` through Jest's coverage configuration loader, remain visible and are
+not suppressed. They remain below the existing `high` failure threshold.
