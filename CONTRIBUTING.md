@@ -252,8 +252,8 @@ single pnpm workspace lockfile. It uses Node 24 and the workspace's pinned pnpm 
 
 - Production dependencies of public plugins and Chrome types are grouped in `deps/update-dependencies`, with a
   `deps: ...` commit. This includes dependencies unique to a single plugin.
-- Other development dependencies are handled separately with `chore(deps): ...` commits. Root tooling changes do
-  not request package releases.
+- All development dependencies except Chrome types are updated manually, including root tooling, plugin
+  development dependencies and consumer fixture tooling. Renovate does not create a separate development-dependency PR.
 - Addon Bone (`adnbn`) and Rspack (`@rspack/*`) stay on their current versions. Framework/toolchain upgrades
   require a separate compatibility review and are excluded from automatic updates in every workspace manifest.
 - Nx and its plugins require manual coordinated upgrades and migrations. Peer ranges, workspace references,

@@ -69,23 +69,6 @@
       "groupSingleUpdates": true
     },
     {
-      "description": "Keep development tooling in a separate PR that does not release plugins.",
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "matchPackageNames": [
-        "!@types/chrome"
-      ],
-      "enabled": true,
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "deps",
-      "rangeStrategy": "bump",
-      "groupName": "development dependencies",
-      "groupSlug": "update-dev-dependencies",
-      "groupSingleUpdates": true,
-      "separateMajorMinor": true
-    },
-    {
       "description": "Nx upgrades can require migrations and are maintained manually as a matched pair.",
       "matchPackageNames": [
         "nx",
