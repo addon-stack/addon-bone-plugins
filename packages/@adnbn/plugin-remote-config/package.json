@@ -68,14 +68,14 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.8.0",
-    "@addon-core/storage": "^0.7.0",
+    "@addon-core/browser": "^0.12.0",
+    "@addon-core/storage": "^0.8.3",
     "dot-prop": "^10.2.0",
-    "type-fest": "^5.9.0"
+    "type-fest": "^5.10.0"
   },
   "devDependencies": {
     "@rspack/core": "1.7.12",
-    "@types/chrome": "^0.2.2",
+    "@types/chrome": "^0.3.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "adnbn": "^0.10.0",

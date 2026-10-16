@@ -63,14 +63,14 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.8.0",
-    "@addon-core/inject-css": "^0.4.0",
-    "@addon-core/inject-script": "^0.5.0",
-    "@addon-core/storage": "^0.7.0",
+    "@addon-core/browser": "^0.12.0",
+    "@addon-core/inject-css": "^0.4.1",
+    "@addon-core/inject-script": "^0.5.1",
+    "@addon-core/storage": "^0.8.3",
     "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.2.2",
+    "@types/chrome": "^0.3.5",
     "adnbn": "^0.10.0"
   },
   "peerDependencies": {
