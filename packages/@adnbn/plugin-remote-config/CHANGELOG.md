@@ -1,3 +1,9 @@
+## 0.6.1 (2026-10-16)
+
+### 📦 Dependencies
+
+- update dependencies ([fb83ed0](https://github.com/addon-stack/addon-bone-plugins/commit/fb83ed0))
+
 ## 0.6.0 (2026-09-28)
 
 ### 🚀 Features
