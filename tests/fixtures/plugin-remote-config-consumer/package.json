@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@adnbn/plugin-remote-config": "workspace:*",
-    "@types/chrome": "0.3.5",
+    "@types/chrome": "0.3.6",
     "adnbn": "0.10.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",

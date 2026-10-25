@@ -42,7 +42,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@swc/core": "^1.16.2",
     "@swc/jest": "^0.2.36",
-    "@types/chrome": "^0.3.5",
+    "@types/chrome": "^0.3.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "eslint": "^10.11.0",
