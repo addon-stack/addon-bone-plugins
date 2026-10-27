@@ -70,8 +70,8 @@
     "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.3.5",
-    "adnbn": "^0.10.0"
+    "@types/chrome": "^0.3.6",
+    "adnbn": "^0.16.1"
   },
   "peerDependencies": {
     "adnbn": ">=0.4.0"

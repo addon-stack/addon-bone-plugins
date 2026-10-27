@@ -222,8 +222,10 @@ try {
         buildAndInspect({browser: "firefox", manifestVersion: 2}),
     ];
 
+    const frameworkVersion = readJson(path.join(consumerDir, "node_modules/adnbn/package.json")).version;
+
     console.log(
-        "Verified packed @adnbn/plugin-reg-cs with Addon Bone 0.10.0 in Chrome and Firefox MV3/MV2 builds."
+        `Verified packed @adnbn/plugin-reg-cs with Addon Bone ${frameworkVersion} in Chrome and Firefox MV3/MV2 builds.`
     );
 
     if (process.argv.includes("--keep-output")) {
