@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.3.6",
-    "adnbn": "^0.10.0"
+    "adnbn": "^0.16.1"
   },
   "peerDependencies": {
     "adnbn": ">=0.4.0"

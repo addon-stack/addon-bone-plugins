@@ -290,37 +290,20 @@ workflow checks for missing credentials before starting Renovate. `RELEASE_APP_I
 `release` environment and Trusted Publishing settings remain the existing manual release workflow's credentials.
 
 
-### Security audit status (2026-10-16)
+### Security audit status (2026-10-28)
 
-Nx 23.3.0 pins `undici` to 7.29.0. A parent-scoped override replaces only that version with 7.29.1 to fix
-[GHSA-rfgv-xxqx-mfg5](https://github.com/advisories/GHSA-rfgv-xxqx-mfg5) and
-[GHSA-w293-vg96-wgc3](https://github.com/advisories/GHSA-w293-vg96-wgc3). Remove the override when Nx requires a
-patched version. The framework remains on 0.10.0; public package versions and peer ranges are unchanged.
+Nx 23.3.0 pins `undici` to 7.29.0. A parent-scoped override replaces only that version with 7.30.1 to fix
+[GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c),
+[GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685), and
+[GHSA-f72v-6w45-q472](https://github.com/advisories/GHSA-f72v-6w45-q472), while retaining the earlier security fixes.
+Remove the override when Nx requires a patched version. Public package versions and peer ranges are unchanged.
 
-`pnpm audit:security` still audits the full workspace and blocks high/critical findings. There is one temporary
-exception for [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) in `braces` 3.0.3, which has
-no published fix. This exception does not fix the dependency or declare it safe for arbitrary consumers.
+Plugin development dependencies use Addon Bone `^0.16.1`, and packed-consumer fixtures pin `0.16.1`. The lockfile
+resolves Zod 4.6.7 and the patched `launch-editor` 2.14.2. The framework upgrade removes the old `@rspack/cli`
+dev-server dependency chain.
 
-The exception applies to the current repository's CI and release inputs:
+The obsolete `@rspack/dev-server` and `sockjs` overrides and the temporary `braces` audit exception have been removed:
+those packages are no longer present in the workspace lockfile.
 
-- The vulnerable operation recursively parses/expands deeply nested **patterns** supplied by an attacker.
-- All current lockfile paths to `braces` pass through `adnbn` -> `@rspack/cli` -> `@rspack/dev-server`, then
-  `chokidar` 3.6.0 or `http-proxy-middleware` 2.0.10 -> `micromatch` 4.0.8 (including the webpack-dev-server paths).
-- The packed-consumer and browser checks invoke `adnbn build` with checked-in fixture configuration. The installed
-  framework's build command uses `compiler.run()` and closes the compiler. CI/release do not start Rspack's dev server
-  or accept user-supplied watcher/proxy patterns. Watch roots and configuration belong to the checked-out source;
-  anyone who changes executable build configuration already controls code executed by that build.
-- The smoke HTTP servers use Node's HTTP server on loopback and exact route comparisons, without glob parsing.
-  In the installed proxy middleware, `matchSingleGlobPath(pattern, uri)` passes the HTTP pathname as the string to
-  match and the configured context as the pattern. A request pathname is not parsed as a brace pattern.
-- These server/watcher dependencies are build tooling, not imported by the plugins' extension runtime. An application
-  using these packages to process untrusted patterns, or exposing a different dev-server configuration, requires its
-  own assessment; this repository's audit exception is not included in published plugin manifests.
-
-Reassess this exception by **2026-11-16**, when the framework/dev-server/proxy dependency chain changes, or before
-introducing external watch roots, patterns or server configuration. Remove it when a fixed `braces` version can be
-resolved. Keep the exception limited to this GHSA; do not ignore the whole package, all unfixable findings or all dev
-dependencies. This review date is a manual deadline, not an automatically enforced expiry.
-
-Moderate/low advisories, including `sprintf-js` through Jest's coverage configuration loader, remain visible and are
-not suppressed. They remain below the existing `high` failure threshold.
+`pnpm audit:security` audits the full workspace and blocks high/critical findings without advisory exceptions.
+Moderate/low advisories remain visible below the existing `high` failure threshold.
