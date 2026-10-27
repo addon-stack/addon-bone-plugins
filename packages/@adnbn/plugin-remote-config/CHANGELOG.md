@@ -1,3 +1,9 @@
+## 0.6.2 (2026-10-27)
+
+### 📦 Dependencies
+
+- update dependencies ([0fa7c07](https://github.com/addon-stack/addon-bone-plugins/commit/0fa7c07))
+
 ## 0.6.1 (2026-10-16)
 
 ### 📦 Dependencies
