@@ -34,8 +34,8 @@ importers:
         specifier: ^0.2.36
         version: 0.2.39(@swc/core@1.16.2(@swc/helpers@0.5.23))
       '@types/chrome':
-        specifier: ^0.3.6
-        version: 0.3.6
+        specifier: ^0.3.7
+        version: 0.3.7
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -79,24 +79,24 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0
       '@addon-core/inject-css':
-        specifier: ^0.4.1
-        version: 0.4.1
+        specifier: ^0.4.2
+        version: 0.4.2
       '@addon-core/inject-script':
-        specifier: ^0.5.1
-        version: 0.5.1
+        specifier: ^0.5.2
+        version: 0.5.2
       '@addon-core/storage':
-        specifier: ^0.8.3
-        version: 0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+        specifier: ^0.8.4
+        version: 0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       webext-patterns:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
       '@types/chrome':
-        specifier: ^0.3.6
-        version: 0.3.6
+        specifier: ^0.3.7
+        version: 0.3.7
       adnbn:
         specifier: ^0.16.1
-        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
+        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
 
   packages/@adnbn/plugin-remote-config:
     dependencies:
@@ -104,8 +104,8 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0
       '@addon-core/storage':
-        specifier: ^0.8.3
-        version: 0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
+        specifier: ^0.8.4
+        version: 0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
       dot-prop:
         specifier: ^10.2.0
         version: 10.2.0
@@ -117,8 +117,8 @@ importers:
         specifier: 1.7.12
         version: 1.7.12(@swc/helpers@0.5.23)
       '@types/chrome':
-        specifier: ^0.3.6
-        version: 0.3.6
+        specifier: ^0.3.7
+        version: 0.3.7
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.18
@@ -127,7 +127,7 @@ importers:
         version: 19.2.7(@types/react@19.2.18)
       adnbn:
         specifier: ^0.16.1
-        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
+        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -141,11 +141,11 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/@adnbn/plugin-reg-cs
       '@types/chrome':
-        specifier: 0.3.6
-        version: 0.3.6
+        specifier: 0.3.7
+        version: 0.3.7
       adnbn:
         specifier: 0.16.1
-        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
+        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -178,11 +178,11 @@ importers:
         specifier: 1.7.12
         version: 1.7.12(@swc/helpers@0.5.23)
       '@types/chrome':
-        specifier: 0.3.6
-        version: 0.3.6
+        specifier: 0.3.7
+        version: 0.3.7
       adnbn:
         specifier: 0.16.1
-        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
+        version: 0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -223,14 +223,14 @@ packages:
   '@addon-core/browser@0.12.0':
     resolution: {integrity: sha512-+mjbmhE87fX3dBa3lrlZ+UKfRoEyLqlrTEGPZ11U/bMSEqDjcDSYof5v95M+Bdl1ShHiRW3XiEDwCbnQS/GgWA==}
 
-  '@addon-core/inject-css@0.4.1':
-    resolution: {integrity: sha512-couFS4imuKSAM0d4p0sJhFHvHbDQEYj14X3M19FmJgxedqfhTmIg0M0APnBW8Gvaz3QKAzHks3AcD4dcm1UT8g==}
+  '@addon-core/inject-css@0.4.2':
+    resolution: {integrity: sha512-FwcEMzAA5tut6pfimtQ21EVsqNX71dbbw3TXEqAFRifnXhTd2yKL5GQhbPvDOXMYz7jSM6a3QiGFViKsVF9eiA==}
 
-  '@addon-core/inject-script@0.5.1':
-    resolution: {integrity: sha512-zLBxQzAKfRhcnsuELHYT1e8cznntbRohpCvz3bwBCASyWOUMsO316/DsMAAZsA0ng2e9goJXa5Xhp7+nCgcERw==}
+  '@addon-core/inject-script@0.5.2':
+    resolution: {integrity: sha512-x99WO9BHYdPtJN79689NR810UPChLD0fWp0qG32/Z8lRqWLccCKDgZFamzYtWwW68Hxj4Wfa8uRY4oMqZtqAJQ==}
 
-  '@addon-core/storage@0.8.3':
-    resolution: {integrity: sha512-gXi87mU7pNwug9nIn1fMeUQNMbCdBXlYKZo9BbacZxt9kiEweHnOPrSC/9g6jiA0Rq2FrUynvc7jney59FY+2A==}
+  '@addon-core/storage@0.8.4':
+    resolution: {integrity: sha512-Q6xvfA50ORzSHS5uVZMCLHkm1GWl5mBrKVYx7piNaNb465FOtUuYjEJotfTBl0A/D0PoeePf56sZ3vurhJ+0iQ==}
     peerDependencies:
       '@types/chrome': '*'
       '@types/react': ^18.0.0 || ^19.0.0
@@ -1945,8 +1945,8 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
-  '@types/chrome@0.3.6':
-    resolution: {integrity: sha512-NXCrCBefCHCKMVbkaxfBQqyP766Wg85S2FQhixCCxq7AtjJwoEaja2y5NSqCzpihIi9mPqhaF5RuybTnrdYD2Q==}
+  '@types/chrome@0.3.7':
+    resolution: {integrity: sha512-jWZgbHqWbTL1a5+PoyN0OJutNyejWgyZ5MdcvKo6iJE1TNRtXR3FxsC4WzNl52yZWPidfWC8NV/VUNZf+OFKcA==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -4529,20 +4529,20 @@ snapshots:
 
   '@addon-core/browser@0.12.0':
     dependencies:
-      '@types/chrome': 0.3.6
+      '@types/chrome': 0.3.7
 
-  '@addon-core/inject-css@0.4.1':
+  '@addon-core/inject-css@0.4.2':
     dependencies:
       '@addon-core/browser': 0.12.0
 
-  '@addon-core/inject-script@0.5.1':
+  '@addon-core/inject-script@0.5.2':
     dependencies:
       '@addon-core/browser': 0.12.0
 
-  '@addon-core/storage@0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)':
+  '@addon-core/storage@0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)':
     dependencies:
       '@addon-core/browser': 0.12.0
-      '@types/chrome': 0.3.6
+      '@types/chrome': 0.3.7
       dequal: 2.0.3
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
@@ -4551,10 +4551,10 @@ snapshots:
       '@types/react-dom': 19.2.7(@types/react@19.2.18)
       typescript: 5.9.3
 
-  '@addon-core/storage@0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)':
+  '@addon-core/storage@0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)':
     dependencies:
       '@addon-core/browser': 0.12.0
-      '@types/chrome': 0.3.6
+      '@types/chrome': 0.3.7
       dequal: 2.0.3
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -6644,7 +6644,7 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.8
 
-  '@types/chrome@0.3.6':
+  '@types/chrome@0.3.7':
     dependencies:
       '@types/har-format': 1.2.16
 
@@ -6988,17 +6988,17 @@ snapshots:
       loader-utils: 2.0.4
       regex-parser: 2.3.1
 
-  adnbn@0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30)):
+  adnbn@0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30)):
     dependencies:
       '@addon-core/browser': 0.12.0
-      '@addon-core/inject-script': 0.5.1
-      '@addon-core/storage': 0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
+      '@addon-core/inject-script': 0.5.2
+      '@addon-core/storage': 0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
       '@rsdoctor/rspack-plugin': 1.6.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
       '@rspack/core': 1.7.12(@swc/helpers@0.5.23)
       '@rspack/lite-tapable': 1.1.0
       '@rspackjs/plugin-html-tags': 1.0.0(@rspack/core@1.7.12(@swc/helpers@0.5.23))
       '@svgr/webpack': 8.1.0(supports-color@8.1.1)(typescript@5.9.3)
-      '@types/chrome': 0.3.6
+      '@types/chrome': 0.3.7
       c12: 3.3.4
       cac: 6.7.14
       consola: 3.4.2
@@ -7044,17 +7044,17 @@ snapshots:
       - utf-8-validate
       - webpack
 
-  adnbn@0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30)):
+  adnbn@0.16.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@swc/helpers@0.5.23)(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30)):
     dependencies:
       '@addon-core/browser': 0.12.0
-      '@addon-core/inject-script': 0.5.1
-      '@addon-core/storage': 0.8.3(@types/chrome@0.3.6)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
+      '@addon-core/inject-script': 0.5.2
+      '@addon-core/storage': 0.8.4(@types/chrome@0.3.7)(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       '@rsdoctor/rspack-plugin': 1.6.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@rsbuild/core@2.2.1)(@rspack/core@1.7.12(@swc/helpers@0.5.23))(supports-color@8.1.1)(webpack@5.110.2(@swc/core@1.16.2(@swc/helpers@0.5.23))(csso@5.0.5)(postcss@8.5.30))
       '@rspack/core': 1.7.12(@swc/helpers@0.5.23)
       '@rspack/lite-tapable': 1.1.0
       '@rspackjs/plugin-html-tags': 1.0.0(@rspack/core@1.7.12(@swc/helpers@0.5.23))
       '@svgr/webpack': 8.1.0(supports-color@8.1.1)(typescript@5.9.3)
-      '@types/chrome': 0.3.6
+      '@types/chrome': 0.3.7
       c12: 3.3.4
       cac: 6.7.14
       consola: 3.4.2

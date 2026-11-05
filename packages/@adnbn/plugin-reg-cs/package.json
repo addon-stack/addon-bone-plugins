@@ -64,13 +64,13 @@
   },
   "dependencies": {
     "@addon-core/browser": "^0.12.0",
-    "@addon-core/inject-css": "^0.4.1",
-    "@addon-core/inject-script": "^0.5.1",
-    "@addon-core/storage": "^0.8.3",
+    "@addon-core/inject-css": "^0.4.2",
+    "@addon-core/inject-script": "^0.5.2",
+    "@addon-core/storage": "^0.8.4",
     "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.3.6",
+    "@types/chrome": "^0.3.7",
     "adnbn": "^0.16.1"
   },
   "peerDependencies": {
