@@ -68,8 +68,8 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm types && pnpm pack:check"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.12.0",
-    "@addon-core/storage": "^0.8.4",
+    "@addon-core/browser": "^0.13.0",
+    "@addon-core/storage": "^0.8.5",
     "dot-prop": "^10.2.0",
     "type-fest": "^5.10.0"
   },
