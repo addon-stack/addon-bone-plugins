@@ -69,9 +69,9 @@
   },
   "dependencies": {
     "@addon-core/browser": "^0.13.0",
-    "@addon-core/storage": "^0.8.5",
+    "@addon-core/storage": "^0.8.6",
     "dot-prop": "^10.2.0",
-    "type-fest": "^5.10.0"
+    "type-fest": "^6.0.3"
   },
   "devDependencies": {
     "@rspack/core": "1.7.12",

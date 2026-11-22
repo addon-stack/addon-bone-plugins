@@ -64,9 +64,9 @@
   },
   "dependencies": {
     "@addon-core/browser": "^0.13.0",
-    "@addon-core/inject-css": "^0.4.3",
-    "@addon-core/inject-script": "^0.5.3",
-    "@addon-core/storage": "^0.8.5",
+    "@addon-core/inject-css": "^0.4.4",
+    "@addon-core/inject-script": "^0.5.4",
+    "@addon-core/storage": "^0.8.6",
     "webext-patterns": "^3.0.0"
   },
   "devDependencies": {
